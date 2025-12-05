@@ -1,0 +1,132 @@
+import Link from 'next/link';
+
+export const Footer = () => {
+  return (
+    <footer className="relative bg-black text-white/60 mt-20 overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+      
+      <div className="relative z-10 max-w-[1600px] mx-auto px-6 sm:px-8 lg:px-12 py-16 md:py-20">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 md:gap-16 mb-16">
+          <div className="space-y-6">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-white text-black flex items-center justify-center">
+                <span className="font-black text-xl">SB</span>
+              </div>
+              <span className="font-black text-2xl text-white">SPORTBOOK</span>
+            </div>
+            <p className="text-sm text-white/50 leading-relaxed font-light">
+              La plateforme de référence pour les passionnés de football à Dakar. Réservez des terrains, rassemblez votre équipe, faites compter chaque match.
+            </p>
+            <div className="flex space-x-3 pt-2">
+              <a 
+                href="#" 
+                className="w-10 h-10 border border-white/20 hover:border-white/40 flex items-center justify-center transition-colors group"
+                aria-label="Facebook"
+              >
+                <span className="text-sm group-hover:scale-110 transition-transform">📘</span>
+              </a>
+              <a 
+                href="#" 
+                className="w-10 h-10 border border-white/20 hover:border-white/40 flex items-center justify-center transition-colors group"
+                aria-label="Twitter"
+              >
+                <span className="text-sm group-hover:scale-110 transition-transform">🐦</span>
+              </a>
+              <a 
+                href="#" 
+                className="w-10 h-10 border border-white/20 hover:border-white/40 flex items-center justify-center transition-colors group"
+                aria-label="Instagram"
+              >
+                <span className="text-sm group-hover:scale-110 transition-transform">📷</span>
+              </a>
+            </div>
+          </div>
+          
+          <div>
+            <h4 className="text-white font-black mb-6 text-sm tracking-tight uppercase">Liens Rapides</h4>
+            <ul className="space-y-3">
+              <li>
+                <Link href="/" className="text-white/60 hover:text-white transition-colors font-light text-sm">
+                  Accueil
+                </Link>
+              </li>
+              <li>
+                <Link href="/fields" className="text-white/60 hover:text-white transition-colors font-light text-sm">
+                  Parcourir les Terrains
+                </Link>
+              </li>
+              <li>
+                <Link href="/auth/login" className="text-white/60 hover:text-white transition-colors font-light text-sm">
+                  Connexion
+                </Link>
+              </li>
+              <li>
+                <Link href="/auth/register" className="text-white/60 hover:text-white transition-colors font-light text-sm">
+                  Inscription
+                </Link>
+              </li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 className="text-white font-black mb-6 text-sm tracking-tight uppercase">Support</h4>
+            <ul className="space-y-3">
+              <li>
+                <a href="#" className="text-white/60 hover:text-white transition-colors font-light text-sm">
+                  Nous Contacter
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-white/60 hover:text-white transition-colors font-light text-sm">
+                  FAQ
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-white/60 hover:text-white transition-colors font-light text-sm">
+                  Conditions Générales
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-white/60 hover:text-white transition-colors font-light text-sm">
+                  Politique de Confidentialité
+                </a>
+              </li>
+            </ul>
+          </div>
+          
+          <div>
+            <h4 className="text-white font-black mb-6 text-sm tracking-tight uppercase">Contact</h4>
+            <ul className="space-y-4 text-sm font-light">
+              <li className="text-white/60">
+                <a href="mailto:info@sportbook.sn" className="hover:text-white transition-colors">
+                  info@sportbook.sn
+                </a>
+              </li>
+              <li className="text-white/60">
+                <a href="tel:+221XXXXXXXXX" className="hover:text-white transition-colors">
+                  +221 XXXXXXXXX
+                </a>
+              </li>
+              <li className="text-white/60">
+                Dakar, Sénégal
+              </li>
+            </ul>
+          </div>
+        </div>
+        
+        <div className="border-t border-white/10 pt-8">
+          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+            <p className="text-sm text-white/40 font-light">
+              &copy; {new Date().getFullYear()} SportBook. Tous droits réservés.
+            </p>
+            <div className="flex items-center space-x-2 text-sm text-white/40 font-light">
+              <span>Fait avec</span>
+              <span className="text-red-500">❤️</span>
+              <span>à Dakar</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+};

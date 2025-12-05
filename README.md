@@ -1,36 +1,64 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Soccer-Booking-Website
 
-## Getting Started
+Plateforme de réservation de terrains de football à Dakar, Sénégal. Réservez facilement des terrains, rassemblez votre équipe et jouez.
 
-First, run the development server:
+## 🚀 Fonctionnalités
+
+- **Recherche de terrains** : Parcourez les terrains disponibles à Dakar
+- **Réservation en ligne** : Réservez votre créneau en quelques clics
+- **Gestion des réservations** : Consultez et gérez vos réservations
+- **Authentification** : Système de connexion/inscription sécurisé
+- **Design unique** : Interface moderne et intuitive
+
+## 🛠️ Technologies
+
+- **Next.js 16** - Framework React
+- **TypeScript** - Typage statique
+- **Tailwind CSS** - Styles
+- **React Hook Form** - Gestion des formulaires
+- **Zod** - Validation des données
+
+## 📦 Installation
 
 ```bash
+# Installer les dépendances
+npm install
+# ou
+yarn install
+
+# Lancer le serveur de développement
 npm run dev
-# or
+# ou
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Ouvrez [http://localhost:3000](http://localhost:3000) dans votre navigateur.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🎨 Design
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Le site utilise un design unique avec :
+- Fond noir avec accents emerald et bleu
+- Typographie en majuscules
+- Bordures géométriques
+- Style minimaliste et moderne
 
-## Learn More
+## 📝 Structure du projet
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+├── app/              # Pages Next.js
+│   ├── auth/        # Pages d'authentification
+│   ├── fields/      # Pages des terrains
+│   └── api/         # Routes API
+├── components/      # Composants React
+├── lib/             # Utilitaires et stores
+└── types/           # Types TypeScript
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🌍 Langue
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Le site est entièrement en français, adapté pour le marché sénégalais.
 
-## Deploy on Vercel
+## 📄 Licence
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Ce projet est privé.
