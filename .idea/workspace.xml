@@ -5,28 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="b068d549-a129-4aa5-ae17-b015f43b4c96" name="Changes" comment="Update Site, for single football camp booking">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/DATABASE_SEEDING.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/DATABASE_SETUP.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/MANUAL_SEED_GUIDE.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/PHASE_1_2_COMPLETE.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/USERS_AND_SEEDING.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/db/seed.sql" beforeDir="false" afterPath="$PROJECT_DIR$/lib/db/seed.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scripts/seed-petit-camp.ts" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/seed-petit-camp.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scripts/seed.ts" beforeDir="false" afterPath="$PROJECT_DIR$/scripts/seed.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/api/auth/register/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/api/auth/register/route.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/api/fields/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/api/fields/route.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/auth/register/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/auth/register/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/fields/[id]/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/fields/[id]/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/app/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/layout/Footer.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/layout/Footer.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/components/layout/Header.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/layout/Header.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/lib/db/schema_updates.sql" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib/db/schema_updates.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/lib/utils/constants.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/lib/utils/constants.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/app/api/admin/password/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/app/api/admin/password/route.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -129,7 +108,7 @@
       <option name="presentableId" value="Default" />
       <updated>1766407802526</updated>
       <workItem from="1766407803640" duration="4894000" />
-      <workItem from="1766413967339" duration="20106000" />
+      <workItem from="1766413967339" duration="20481000" />
     </task>
     <task id="LOCAL-00001" summary="Update Site, for single football camp booking">
       <option name="closed" value="true" />

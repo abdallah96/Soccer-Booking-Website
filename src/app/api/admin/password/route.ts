@@ -36,8 +36,6 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const supabase = await createClient();
-
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const { error } = await supabase

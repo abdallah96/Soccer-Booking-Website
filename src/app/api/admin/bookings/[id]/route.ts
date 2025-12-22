@@ -3,11 +3,11 @@ import { createClient } from '@/lib/supabase/server';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { status } = await request.json();
-    const bookingId = params.id;
+    const { id: bookingId } = await params;
 
     if (!status || !['confirmed', 'cancelled'].includes(status)) {
       return NextResponse.json(
