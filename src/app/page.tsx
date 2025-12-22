@@ -130,99 +130,199 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="relative py-24 md:py-32 px-6 sm:px-8 lg:px-12 bg-white">
-        <div className="max-w-[1600px] mx-auto">
-          <div className="mb-20">
+      <section className="relative py-24 md:py-32 px-6 sm:px-8 lg:px-12 bg-gradient-to-b from-gray-900 via-black to-gray-900 overflow-hidden">
+        {/* Animated background decorative elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {/* Large gradient orbs with more intensity */}
+          <div className="absolute top-0 left-0 w-[800px] h-[800px] bg-gradient-to-br from-emerald-500/20 via-emerald-500/10 to-transparent rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-0 right-0 w-[800px] h-[800px] bg-gradient-to-br from-blue-500/20 via-blue-500/10 to-transparent rounded-full blur-3xl animate-pulse delay-1000"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-emerald-500/15 via-blue-500/15 to-emerald-500/15 rounded-full blur-3xl"></div>
+          
+          {/* Grid pattern overlay - lighter for dark background */}
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:24px_24px] opacity-40"></div>
+          
+          {/* Floating geometric shapes - more visible */}
+          <div className="absolute top-20 right-20 w-32 h-32 border-2 border-emerald-500/20 rounded-full rotate-45 animate-pulse delay-500"></div>
+          <div className="absolute bottom-32 left-32 w-24 h-24 border-2 border-blue-500/20 rounded-full -rotate-12 animate-pulse delay-700"></div>
+          <div className="absolute top-1/3 right-1/4 w-16 h-16 border-2 border-emerald-500/25 rounded-full"></div>
+          <div className="absolute bottom-1/3 left-1/4 w-20 h-20 border-2 border-blue-500/25 rounded-full"></div>
+          
+          {/* Diagonal lines accent - more visible */}
+          <div className="absolute top-0 left-0 w-full h-full">
+            <div className="absolute top-1/4 left-0 w-full h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent"></div>
+            <div className="absolute bottom-1/4 left-0 w-full h-px bg-gradient-to-r from-transparent via-blue-500/20 to-transparent"></div>
+          </div>
+          
+          {/* Corner accents - more visible */}
+          <div className="absolute top-0 left-0 w-64 h-64 bg-gradient-to-br from-emerald-500/15 to-transparent rounded-br-full"></div>
+          <div className="absolute bottom-0 right-0 w-64 h-64 bg-gradient-to-tl from-blue-500/15 to-transparent rounded-tl-full"></div>
+        </div>
+
+        <div className="relative max-w-[1600px] mx-auto">
+          {/* Header */}
+          <div className="mb-20 text-center">
             <div className="inline-block mb-6">
-              <span className="text-black text-sm font-mono tracking-[0.3em] uppercase">COMMENT ÇA MARCHE</span>
+              <span className="text-white/40 text-sm font-mono tracking-[0.3em] uppercase">COMMENT ÇA MARCHE</span>
             </div>
             <h2 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-tight mb-6">
-              <span className="text-black">TROIS</span>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-blue-500 ml-4">ÉTAPES</span>
+              <span className="text-white">TROIS</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400 ml-4">ÉTAPES</span>
             </h2>
-            <p className="text-xl text-black/60 max-w-2xl font-light">
+            <p className="text-xl text-white/60 max-w-2xl mx-auto font-light">
               De l'idée au coup d'envoi. Simple, rapide, fiable.
             </p>
           </div>
 
-          <div className="space-y-16 md:space-y-24">
-            <div className="grid md:grid-cols-12 gap-8 items-center">
-              <div className="md:col-span-5 md:order-2">
-                <div className="relative">
-                  <div className="absolute -bottom-4 -left-4 w-full h-full border-2 border-black/10"></div>
-                  <div className="relative bg-black text-white p-10 md:p-12">
-                    <div className="text-8xl font-black text-emerald-400 mb-6">01</div>
-                    <h3 className="text-3xl md:text-4xl font-black mb-6 leading-tight">CHOISISSEZ VOTRE TERRAIN</h3>
-                    <p className="text-lg text-white/70 leading-relaxed mb-6 font-light">
-                      Parcourez les terrains premium à Dakar. Filtrez par localisation, prix, surface. Photos réelles, avis honnêtes.
-                    </p>
-                    <div className="pt-6 border-t border-white/10">
-                      <div className="text-sm text-white/50 font-mono">Yoff · Parcelles · Plateau · Médina</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="md:col-span-7 md:order-1">
-                <div className="h-64 md:h-96 bg-gradient-to-br from-emerald-500/10 to-blue-500/10 border-2 border-black/5 relative overflow-hidden">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-8xl font-black text-emerald-500/20">⚽</div>
-                  </div>
-                  <div className="absolute top-4 left-4 w-16 h-16 border-2 border-emerald-500/30 rotate-45"></div>
-                  <div className="absolute bottom-4 right-4 w-12 h-12 border-2 border-blue-500/30 -rotate-12"></div>
-                </div>
-              </div>
-            </div>
+          {/* Steps - Creative Timeline Design */}
+          <div className="relative">
+            {/* Vertical timeline line (hidden on mobile) */}
+            <div className="hidden lg:block absolute left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-emerald-500 via-blue-500 to-emerald-500 transform -translate-x-1/2"></div>
 
-            <div className="grid md:grid-cols-12 gap-8 items-center">
-              <div className="md:col-span-7">
-                <div className="h-64 md:h-96 bg-gradient-to-br from-blue-500/10 to-emerald-500/10 border-2 border-black/5 relative overflow-hidden">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-8xl font-black text-blue-500/20">📅</div>
-                  </div>
-                  <div className="absolute top-4 right-4 w-16 h-16 border-2 border-blue-500/30 -rotate-45"></div>
-                  <div className="absolute bottom-4 left-4 w-12 h-12 border-2 border-emerald-500/30 rotate-12"></div>
-                </div>
-              </div>
-              <div className="md:col-span-5">
-                <div className="relative">
-                  <div className="absolute -bottom-4 -right-4 w-full h-full border-2 border-black/10"></div>
-                  <div className="relative bg-white border-2 border-black p-10 md:p-12">
-                    <div className="text-8xl font-black text-blue-500 mb-6">02</div>
-                    <h3 className="text-3xl md:text-4xl font-black mb-6 leading-tight text-black">RÉSERVEZ VOTRE CRÉNEAU</h3>
-                    <p className="text-lg text-black/70 leading-relaxed mb-6 font-light">
-                      Consultez les disponibilités en direct. Réservez instantanément. Partagez avec votre équipe. Plusieurs options de paiement.
-                    </p>
-                    <div className="pt-6 border-t border-black/10">
-                      <div className="text-sm text-black/50 font-mono">Wave · Orange Money · Espèces</div>
+            <div className="space-y-32 md:space-y-40">
+              {/* Step 1 */}
+              <div className="relative">
+                <div className="grid lg:grid-cols-2 gap-12 items-center">
+                  {/* Left side - Content */}
+                  <div className="lg:order-1 relative group">
+                    <div className="relative z-10">
+                      {/* Step number badge */}
+                      <div className="absolute -top-6 -left-6 w-20 h-20 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center shadow-2xl shadow-emerald-500/30 transform group-hover:scale-110 transition-transform duration-300">
+                        <span className="text-3xl font-black text-white">01</span>
+                      </div>
+                      
+                      {/* Content card */}
+                      <div className="relative bg-gradient-to-br from-black via-black to-gray-900 text-white p-10 md:p-12 rounded-3xl shadow-2xl transform group-hover:-translate-y-2 transition-all duration-300">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl"></div>
+                        <div className="relative z-10">
+                          <h3 className="text-3xl md:text-4xl font-black mb-6 leading-tight">CHOISISSEZ PETIT CAMP</h3>
+                          <p className="text-lg text-white/70 leading-relaxed mb-6 font-light">
+                            Un seul terrain, une seule mission : vous offrir la meilleure expérience de football. Terrain professionnel, installations modernes.
+                          </p>
+                          <div className="pt-6 border-t border-white/10">
+                            <div className="flex items-center gap-3 flex-wrap">
+                              <span className="px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-sm font-mono text-emerald-300">Éclairage</span>
+                              <span className="px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-sm font-mono text-emerald-300">Vestiaires</span>
+                              <span className="px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-sm font-mono text-emerald-300">Parking</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
+                    {/* Decorative border */}
+                    <div className="absolute inset-0 border-2 border-emerald-500/20 rounded-3xl transform translate-x-4 translate-y-4 -z-10"></div>
                   </div>
-                </div>
-              </div>
-            </div>
 
-            <div className="grid md:grid-cols-12 gap-8 items-center">
-              <div className="md:col-span-5 md:order-2">
-                <div className="relative">
-                  <div className="absolute -top-4 -left-4 w-full h-full border-2 border-black/10"></div>
-                  <div className="relative bg-gradient-to-br from-emerald-500 to-blue-500 text-white p-10 md:p-12">
-                    <div className="text-8xl font-black text-white/30 mb-6">03</div>
-                    <h3 className="text-3xl md:text-4xl font-black mb-6 leading-tight">PRÉSENTEZ-VOUS & JOUEZ</h3>
-                    <p className="text-lg text-white/90 leading-relaxed mb-6 font-light">
-                      Recevez des rappels. Terrain prêt. Équipe notifiée. Tout est prêt pour un match épique.
-                    </p>
-                    <div className="pt-6 border-t border-white/20">
-                      <div className="text-sm text-white/70 font-mono">Annulation facile · Notifications instantanées</div>
+                  {/* Right side - Visual */}
+                  <div className="lg:order-2 relative">
+                    <div className="relative h-80 md:h-96 rounded-3xl overflow-hidden group">
+                      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 via-emerald-500/10 to-blue-500/20"></div>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-9xl font-black text-emerald-500/30 transform group-hover:scale-110 transition-transform duration-500">⚽</div>
+                      </div>
+                      {/* Animated circles */}
+                      <div className="absolute top-8 left-8 w-24 h-24 border-2 border-emerald-500/30 rounded-full animate-pulse"></div>
+                      <div className="absolute bottom-8 right-8 w-16 h-16 border-2 border-blue-500/30 rounded-full animate-pulse delay-300"></div>
+                      <div className="absolute top-1/2 right-12 w-12 h-12 border-2 border-emerald-500/20 rounded-full"></div>
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="md:col-span-7 md:order-1">
-                <div className="h-64 md:h-96 bg-gradient-to-br from-emerald-500/10 to-blue-500/10 border-2 border-black/5 relative overflow-hidden">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-8xl font-black text-emerald-500/20">🏆</div>
+
+              {/* Step 2 */}
+              <div className="relative">
+                <div className="grid lg:grid-cols-2 gap-12 items-center">
+                  {/* Left side - Visual */}
+                  <div className="lg:order-1 relative">
+                    <div className="relative h-80 md:h-96 rounded-3xl overflow-hidden group">
+                      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-blue-500/10 to-emerald-500/20"></div>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-9xl font-black text-blue-500/30 transform group-hover:scale-110 transition-transform duration-500">📅</div>
+                      </div>
+                      {/* Animated elements */}
+                      <div className="absolute top-12 right-12 w-20 h-20 border-2 border-blue-500/30 rounded-full animate-pulse"></div>
+                      <div className="absolute bottom-12 left-12 w-28 h-28 border-2 border-emerald-500/30 rounded-full animate-pulse delay-300"></div>
+                      <div className="absolute top-1/2 left-8 w-14 h-14 border-2 border-blue-500/20 rounded-full"></div>
+                    </div>
                   </div>
-                  <div className="absolute top-4 left-4 w-16 h-16 border-2 border-emerald-500/30 rotate-45"></div>
-                  <div className="absolute bottom-4 right-4 w-12 h-12 border-2 border-blue-500/30 -rotate-12"></div>
+
+                  {/* Right side - Content */}
+                  <div className="lg:order-2 relative group">
+                    <div className="relative z-10">
+                      {/* Step number badge */}
+                      <div className="absolute -top-6 -right-6 w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-2xl shadow-blue-500/30 transform group-hover:scale-110 transition-transform duration-300 z-20">
+                        <span className="text-3xl font-black text-white">02</span>
+                      </div>
+                      
+                      {/* Content card */}
+                      <div className="relative bg-gray-800 border-2 border-gray-700 text-white p-10 md:p-12 rounded-3xl shadow-2xl transform group-hover:-translate-y-2 transition-all duration-300">
+                        <div className="absolute top-0 left-0 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl"></div>
+                        <div className="relative z-10">
+                          <h3 className="text-3xl md:text-4xl font-black mb-6 leading-tight">RÉSERVEZ VOTRE CRÉNEAU</h3>
+                          <p className="text-lg text-white/70 leading-relaxed mb-6 font-light">
+                            Choisissez votre date, heure et durée. Paiement instantané. Confirmation immédiate. C'est aussi simple que ça.
+                          </p>
+                          <div className="pt-6 border-t border-white/10">
+                            <div className="flex items-center gap-3 flex-wrap">
+                              <span className="px-4 py-2 bg-blue-500/20 border border-blue-500/30 rounded-full text-sm font-mono text-blue-300">Wave</span>
+                              <span className="px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-sm font-mono text-emerald-300">Orange Money</span>
+                              <span className="px-4 py-2 bg-white/10 border border-white/20 rounded-full text-sm font-mono text-white/80">Espèces</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Decorative border */}
+                    <div className="absolute inset-0 border-2 border-blue-500/30 rounded-3xl transform -translate-x-4 translate-y-4 -z-10"></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 3 */}
+              <div className="relative">
+                <div className="grid lg:grid-cols-2 gap-12 items-center">
+                  {/* Left side - Content */}
+                  <div className="lg:order-1 relative group">
+                    <div className="relative z-10">
+                      {/* Step number badge */}
+                      <div className="absolute -top-6 -left-6 w-20 h-20 bg-gradient-to-br from-emerald-500 via-blue-500 to-emerald-500 rounded-full flex items-center justify-center shadow-2xl shadow-emerald-500/30 transform group-hover:scale-110 transition-transform duration-300">
+                        <span className="text-3xl font-black text-white">03</span>
+                      </div>
+                      
+                      {/* Content card */}
+                      <div className="relative bg-gradient-to-br from-emerald-500 via-blue-500 to-emerald-500 text-white p-10 md:p-12 rounded-3xl shadow-2xl transform group-hover:-translate-y-2 transition-all duration-300 overflow-hidden">
+                        <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+                        <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
+                        <div className="relative z-10">
+                          <h3 className="text-3xl md:text-4xl font-black mb-6 leading-tight">PRÉSENTEZ-VOUS & JOUEZ</h3>
+                          <p className="text-lg text-white/90 leading-relaxed mb-6 font-light">
+                            Terrain prêt. Équipe notifiée. Tout est prêt. Il ne reste plus qu'à jouer et gagner.
+                          </p>
+                          <div className="pt-6 border-t border-white/20">
+                            <div className="flex items-center gap-3 flex-wrap">
+                              <span className="px-4 py-2 bg-white/20 border border-white/30 rounded-full text-sm font-mono text-white">Confirmation instantanée</span>
+                              <span className="px-4 py-2 bg-white/20 border border-white/30 rounded-full text-sm font-mono text-white">Annulation facile</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Decorative border */}
+                    <div className="absolute inset-0 border-2 border-emerald-500/30 rounded-3xl transform translate-x-4 translate-y-4 -z-10"></div>
+                  </div>
+
+                  {/* Right side - Visual */}
+                  <div className="lg:order-2 relative">
+                    <div className="relative h-80 md:h-96 rounded-3xl overflow-hidden group">
+                      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 via-blue-500/20 to-emerald-500/20"></div>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-9xl font-black text-white/40 transform group-hover:scale-110 transition-transform duration-500">🏆</div>
+                      </div>
+                      {/* Animated elements */}
+                      <div className="absolute top-8 right-8 w-20 h-20 border-2 border-white/30 rounded-full animate-pulse"></div>
+                      <div className="absolute bottom-8 left-8 w-24 h-24 border-2 border-white/20 rounded-full animate-pulse delay-300"></div>
+                      <div className="absolute top-1/2 right-1/4 w-16 h-16 border-2 border-white/25 rounded-full"></div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

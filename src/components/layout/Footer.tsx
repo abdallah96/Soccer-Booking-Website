@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import Image from 'next/image';
+import { LOGO_URL, isValidLogoUrl } from '@/lib/utils/constants';
 
 export const Footer = () => {
   return (
@@ -9,13 +11,26 @@ export const Footer = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 md:gap-16 mb-16">
           <div className="space-y-6">
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-white text-black flex items-center justify-center">
-                <span className="font-black text-xl">SB</span>
+              <div className="relative w-12 h-12 flex items-center justify-center">
+                {isValidLogoUrl(LOGO_URL) && LOGO_URL !== '/logo-placeholder.png' ? (
+                  <Image
+                    src={LOGO_URL}
+                    alt="Petit Camp Logo"
+                    width={48}
+                    height={48}
+                    className="object-contain"
+
+                  />
+                ) : (
+                  <div className="w-12 h-12 bg-white text-black flex items-center justify-center">
+                    <span className="font-black text-xl">PC</span>
+                  </div>
+                )}
               </div>
-              <span className="font-black text-2xl text-white">SPORTBOOK</span>
+              <span className="font-black text-2xl text-white">PETIT CAMP</span>
             </div>
             <p className="text-sm text-white/50 leading-relaxed font-light">
-              La plateforme de référence pour les passionnés de football à Dakar. Réservez des terrains, rassemblez votre équipe, faites compter chaque match.
+              La plateforme de référence pour réserver votre terrain de football à Petit Camp. Réservez votre créneau, rassemblez votre équipe, jouez.
             </p>
             <div className="flex space-x-3 pt-2">
               <a 
@@ -117,12 +132,10 @@ export const Footer = () => {
         <div className="border-t border-white/10 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <p className="text-sm text-white/40 font-light">
-              &copy; {new Date().getFullYear()} SportBook. Tous droits réservés.
+              &copy; {new Date().getFullYear()} Petit Camp. Tous droits réservés.
             </p>
             <div className="flex items-center space-x-2 text-sm text-white/40 font-light">
-              <span>Fait avec</span>
-              <span className="text-red-500">❤️</span>
-              <span>à Dakar</span>
+              <a href='http://g-tech.dev'>By G-Tech</a>
             </div>
           </div>
         </div>

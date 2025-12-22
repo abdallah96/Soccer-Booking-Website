@@ -42,3 +42,14 @@ export const PETIT_CAMP_FIELD = {
 
 export const DEFAULT_ADMIN_EMAIL = 'admin@petitcamp.sn';
 export const DEFAULT_ADMIN_PASSWORD = 'admin123'; // Change in production!
+
+// Logo URL from Vercel Blob
+// Set NEXT_PUBLIC_LOGO_URL in your .env.local file with the actual blob URL
+// Example: https://your-blob-id.public.blob.vercel-storage.com/petit-camp-logo.png
+export const LOGO_URL = process.env.NEXT_PUBLIC_LOGO_URL || 'https://qeimekw72dgplpqq.public.blob.vercel-storage.com/Images/petit-camp.jpeg';
+
+// Helper to check if logo URL is valid
+export const isValidLogoUrl = (url: string): boolean => {
+  if (!url) return false;
+  return url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/');
+};
