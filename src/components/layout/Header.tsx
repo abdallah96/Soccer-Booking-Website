@@ -42,11 +42,11 @@ export const Header = () => {
             <div className="relative">
               <div className="absolute inset-0 bg-black blur-md opacity-20 group-hover:opacity-30 transition-opacity"></div>
               <div className="relative w-12 h-12 bg-black flex items-center justify-center transform group-hover:scale-110 transition-all duration-300">
-                <span className="text-white font-black text-xl">SB</span>
+                <span className="text-white font-black text-xl">PC</span>
               </div>
             </div>
             <span className="font-black text-2xl md:text-3xl text-black tracking-tight">
-              SPORTBOOK
+              PETIT CAMP
             </span>
           </Link>
 

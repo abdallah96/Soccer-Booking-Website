@@ -30,11 +30,11 @@ export default function Home() {
                 </div>
 
                 <h1 className="text-6xl sm:text-7xl lg:text-8xl xl:text-9xl font-black leading-[0.85] tracking-tight">
-                  <span className="block text-white">RÉSERVATION</span>
+                  <span className="block text-white">PETIT</span>
                   <span className="block text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-emerald-500 to-blue-400" style={{ WebkitTextStroke: '1px rgba(34,197,94,0.3)' }}>
-                    TERRAIN
+                    CAMP
                   </span>
-                  <span className="block text-white/80 text-5xl sm:text-6xl lg:text-7xl mt-2">RÉINVENTÉE</span>
+                  <span className="block text-white/80 text-5xl sm:text-6xl lg:text-7xl mt-2">RÉSERVATION</span>
                 </h1>
               </div>
               
@@ -61,21 +61,17 @@ export default function Home() {
                 )}
               </div>
 
-              <div className="grid grid-cols-4 gap-4 pt-8 max-w-xl">
+              <div className="grid grid-cols-3 gap-4 pt-8 max-w-xl">
                 <div className="text-center">
-                  <div className="text-4xl sm:text-5xl font-black text-emerald-400 mb-1">32</div>
-                  <div className="text-xs text-white/50 uppercase tracking-wider font-mono">Terrains</div>
+                  <div className="text-4xl sm:text-5xl font-black text-emerald-400 mb-1">1</div>
+                  <div className="text-xs text-white/50 uppercase tracking-wider font-mono">Terrain</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-4xl sm:text-5xl font-black text-blue-400 mb-1">1.2k</div>
-                  <div className="text-xs text-white/50 uppercase tracking-wider font-mono">Mensuel</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-4xl sm:text-5xl font-black text-emerald-400 mb-1">4.8</div>
+                  <div className="text-4xl sm:text-5xl font-black text-blue-400 mb-1">4.8</div>
                   <div className="text-xs text-white/50 uppercase tracking-wider font-mono">Note</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-4xl sm:text-5xl font-black text-blue-400 mb-1">24/7</div>
+                  <div className="text-4xl sm:text-5xl font-black text-emerald-400 mb-1">8h-2h</div>
                   <div className="text-xs text-white/50 uppercase tracking-wider font-mono">Ouvert</div>
                 </div>
               </div>
@@ -95,14 +91,14 @@ export default function Home() {
                     </div>
                     
                     <div className="pt-4 border-t border-white/10">
-                      <div className="text-xs text-white/40 font-mono mb-1">TERRAIN VEDETTE</div>
-                      <div className="text-3xl font-black text-white mb-2">STADIUM ELITE</div>
-                      <div className="text-sm text-white/60 mb-4">Plateau · Dakar</div>
+                      <div className="text-xs text-white/40 font-mono mb-1">NOTRE TERRAIN</div>
+                      <div className="text-3xl font-black text-white mb-2">PETIT CAMP</div>
+                      <div className="text-sm text-white/60 mb-4">Dakar · Sénégal</div>
                       
                       <div className="grid grid-cols-3 gap-3 mb-4">
                         <div className="bg-white/5 p-3 border border-white/10">
                           <div className="text-xs text-white/40 mb-1">Joueurs</div>
-                          <div className="text-xl font-black text-white">14/22</div>
+                          <div className="text-xl font-black text-white">22</div>
                         </div>
                         <div className="bg-white/5 p-3 border border-white/10">
                           <div className="text-xs text-white/40 mb-1">Surface</div>
@@ -110,13 +106,20 @@ export default function Home() {
                         </div>
                         <div className="bg-white/5 p-3 border border-white/10">
                           <div className="text-xs text-white/40 mb-1">Note</div>
-                          <div className="text-lg font-black text-white">4.9★</div>
+                          <div className="text-lg font-black text-white">4.8★</div>
                         </div>
                       </div>
                       
-                      <div className="flex items-center justify-between pt-4 border-t border-white/10">
-                        <div className="text-3xl font-black text-emerald-400">15 000</div>
-                        <div className="text-xs text-white/40 font-mono">FCFA / heure</div>
+                      <div className="pt-4 border-t border-white/10 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm text-white/60 font-mono">Jour (8h-18h)</div>
+                          <div className="text-xl font-black text-emerald-400">20 000</div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm text-white/60 font-mono">Nuit (19h-2h)</div>
+                          <div className="text-xl font-black text-blue-400">25 000</div>
+                        </div>
+                        <div className="text-xs text-white/40 font-mono pt-2">FCFA / heure</div>
                       </div>
                     </div>
                   </div>
@@ -236,79 +239,45 @@ export default function Home() {
         <div className="relative z-10 max-w-[1600px] mx-auto">
           <div className="mb-16">
             <div className="inline-block mb-6">
-              <span className="text-white/40 text-sm font-mono tracking-[0.3em] uppercase">TERRAINS VEDETTES</span>
+              <span className="text-white/40 text-sm font-mono tracking-[0.3em] uppercase">NOTRE TERRAIN</span>
             </div>
             <h2 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-tight mb-6 text-white">
-              MEILLEURES <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400">LOCALISATIONS</span>
+              PETIT <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400">CAMP</span>
             </h2>
             <div className="flex items-center justify-between">
-              <p className="text-xl text-white/60 font-light">Emplacements premium. Meilleures notes. Disponibles maintenant.</p>
+              <p className="text-xl text-white/60 font-light">Terrain professionnel. Installations modernes. Disponible maintenant.</p>
               <Link href="/fields" className="text-white/80 hover:text-white font-bold text-sm font-mono tracking-wider border-b-2 border-white/30 hover:border-white transition-colors">
-                TOUT VOIR →
+                RÉSERVER →
               </Link>
             </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="group cursor-pointer">
+          <div className="grid md:grid-cols-1 gap-6 max-w-2xl mx-auto">
+            <Link href="/fields/petit-camp-1" className="group cursor-pointer">
               <div className="relative mb-4">
                 <div className="absolute -bottom-2 -right-2 w-full h-full border-2 border-emerald-500/30 group-hover:border-emerald-500/50 transition-colors"></div>
-                <div className="relative bg-white/5 backdrop-blur-md border border-white/10 p-6 min-h-[300px] flex flex-col justify-between group-hover:bg-white/10 transition-colors">
+                <div className="relative bg-white/5 backdrop-blur-md border border-white/10 p-8 min-h-[300px] flex flex-col justify-between group-hover:bg-white/10 transition-colors">
                   <div>
                     <div className="flex items-center justify-between mb-4">
-                      <span className="text-xs text-white/40 font-mono uppercase">Plateau</span>
-                      <span className="text-sm font-black text-emerald-400">4.9★</span>
-                    </div>
-                    <h3 className="text-3xl font-black text-white mb-3">STADIUM ELITE</h3>
-                    <p className="text-sm text-white/60 mb-6 font-light">Centre-ville · Synthétique · Éclairage</p>
-                  </div>
-                  <div className="flex items-center justify-between pt-4 border-t border-white/10">
-                    <span className="text-xs text-white/40 font-mono">18:00 - 20:00</span>
-                    <span className="text-2xl font-black text-emerald-400">15 000</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="group cursor-pointer">
-              <div className="relative mb-4">
-                <div className="absolute -bottom-2 -left-2 w-full h-full border-2 border-blue-500/30 group-hover:border-blue-500/50 transition-colors"></div>
-                <div className="relative bg-white/5 backdrop-blur-md border border-white/10 p-6 min-h-[300px] flex flex-col justify-between group-hover:bg-white/10 transition-colors">
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="text-xs text-white/40 font-mono uppercase">Parcelles</span>
-                      <span className="text-sm font-black text-blue-400">4.7★</span>
-                    </div>
-                    <h3 className="text-3xl font-black text-white mb-3">SUNSET VALLEY</h3>
-                    <p className="text-sm text-white/60 mb-6 font-light">Bord de mer · Gazon naturel · Parking</p>
-                  </div>
-                  <div className="flex items-center justify-between pt-4 border-t border-white/10">
-                    <span className="text-xs text-white/40 font-mono">20:00 - 22:00</span>
-                    <span className="text-2xl font-black text-blue-400">12 000</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="group cursor-pointer">
-              <div className="relative mb-4">
-                <div className="absolute -top-2 -right-2 w-full h-full border-2 border-emerald-500/30 group-hover:border-emerald-500/50 transition-colors"></div>
-                <div className="relative bg-white/5 backdrop-blur-md border border-white/10 p-6 min-h-[300px] flex flex-col justify-between group-hover:bg-white/10 transition-colors">
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="text-xs text-white/40 font-mono uppercase">Médina</span>
+                      <span className="text-xs text-white/40 font-mono uppercase">Dakar</span>
                       <span className="text-sm font-black text-emerald-400">4.8★</span>
                     </div>
-                    <h3 className="text-3xl font-black text-white mb-3">RIVERSIDE ARENA</h3>
-                    <p className="text-sm text-white/60 mb-6 font-light">Prêt pour tournoi · Tribune · Snacks</p>
+                    <h3 className="text-4xl font-black text-white mb-3">PETIT CAMP</h3>
+                    <p className="text-sm text-white/60 mb-6 font-light">Terrain synthétique · Éclairage · Vestiaires · Parking</p>
                   </div>
-                  <div className="flex items-center justify-between pt-4 border-t border-white/10">
-                    <span className="text-xs text-white/40 font-mono">Week-end</span>
-                    <span className="text-2xl font-black text-emerald-400">18 000</span>
+                  <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
+                    <div>
+                      <div className="text-xs text-white/40 font-mono mb-1">Jour (8h-18h)</div>
+                      <div className="text-2xl font-black text-emerald-400">20 000</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-white/40 font-mono mb-1">Nuit (19h-2h)</div>
+                      <div className="text-2xl font-black text-blue-400">25 000</div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </Link>
           </div>
         </div>
       </section>
@@ -328,11 +297,11 @@ export default function Home() {
             {user ? 'VOTRE PROCHAIN MATCH VOUS ATTEND' : 'COMMENCEZ VOTRE PARCOURS FOOTBALL'}
           </h2>
           
-          <p className="text-xl md:text-2xl mb-12 text-white/90 max-w-3xl mx-auto leading-relaxed font-light">
-            {user
-              ? 'Choisissez un terrain, réservez votre créneau, dominez le terrain.'
-              : 'Rejoignez des milliers de joueurs à Dakar. Réservez votre premier match en quelques secondes.'}
-          </p>
+              <p className="text-xl md:text-2xl mb-12 text-white/90 max-w-3xl mx-auto leading-relaxed font-light">
+                {user
+                  ? 'Réservez votre créneau, rassemblez votre équipe, jouez.'
+                  : 'Réservez votre terrain à Petit Camp. Simple, rapide et fiable.'}
+              </p>
           
           <Link href={user ? '/fields' : '/auth/register'} className="inline-block group">
             <div className="relative">

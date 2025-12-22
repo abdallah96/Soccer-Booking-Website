@@ -8,20 +8,17 @@ export const COLORS = {
   border: '#e0e0e0',
 };
 
-export const TIME_SLOTS = [
-  '08:00 - 10:00',
-  '10:00 - 12:00',
-  '12:00 - 14:00',
-  '14:00 - 16:00',
-  '16:00 - 18:00',
-  '18:00 - 20:00',
-  '20:00 - 22:00',
+// Available time slots for Petit Camp (8h to 2h next day)
+export const AVAILABLE_HOURS = [
+  '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00',
+  '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00',
+  '22:00', '23:00', '00:00', '01:00'
 ];
 
 export const PAYMENT_METHODS = [
   { id: 'wave', name: 'Wave' },
   { id: 'orange_money', name: 'Orange Money' },
-  { id: 'cash', name: 'Cash' },
+  { id: 'cash', name: 'Espèces' },
 ];
 
 export const BOOKING_STATUS = {
@@ -30,45 +27,18 @@ export const BOOKING_STATUS = {
   CANCELLED: 'cancelled',
 };
 
-export const SAMPLE_FIELDS = [
-  {
-    name: 'Stadium Elite Football Field',
-    description: 'Professional-grade football field with modern facilities',
-    location: 'Downtown Sports Complex, Dakar',
-    price_per_hour: 15000,
-    capacity: 22,
-    facilities: ['Floodlights', 'Changing Rooms', 'Parking', 'Refreshments'],
-    rating: 4.8,
-    images: [
-      'https://images.unsplash.com/photo-1459865264687-595d652de67e?w=800',
-      'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800',
-    ],
-  },
-  {
-    name: 'Sunset Valley Field',
-    description: 'Beautiful field with evening floodlights and great views',
-    location: 'Plateau, Dakar',
-    price_per_hour: 12000,
-    capacity: 20,
-    facilities: ['Floodlights', 'Parking', 'Seating Area'],
-    rating: 4.5,
-    images: [
-      'https://images.unsplash.com/photo-1570902235392-8f6121c2a9f8?w=800',
-    ],
-  },
-  {
-    name: 'Riverside Sports Arena',
-    description: 'Spacious field perfect for tournaments and big games',
-    location: 'Île de Gorée, Dakar',
-    price_per_hour: 18000,
-    capacity: 24,
-    facilities: ['Floodlights', 'Changing Rooms', 'Parking', 'Stadium Seating', 'Refreshments'],
-    rating: 4.9,
-    images: [
-      'https://images.unsplash.com/photo-1487180144351-b8472da7d491?w=800',
-    ],
-  },
-];
+// Petit Camp - Single field organization
+export const PETIT_CAMP_FIELD = {
+  id: 'petit-camp-1',
+  name: 'Petit Camp',
+  description: 'Terrain de football professionnel avec installations modernes. Éclairage de qualité, vestiaires équipés, parking sécurisé et rafraîchissements disponibles.',
+  location: 'Dakar, Sénégal',
+  price_per_hour: 20000, // Base price, actual price calculated dynamically based on time
+  capacity: 22,
+  facilities: ['Éclairage', 'Vestiaires', 'Parking', 'Rafraîchissements'],
+  rating: 4.8,
+  images: [],
+};
 
-export const DEFAULT_ADMIN_EMAIL = 'admin@sport.sn';
+export const DEFAULT_ADMIN_EMAIL = 'admin@petitcamp.sn';
 export const DEFAULT_ADMIN_PASSWORD = 'admin123'; // Change in production!

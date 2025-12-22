@@ -1,28 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// This is a mock implementation. In production, you would:
-// 1. Query Supabase to verify the user
-// 2. Generate a JWT token
-// 3. Return user data and token
-
-const mockUsers = [
-  {
-    id: '1',
-    email: 'user@test.com',
-    name: 'Test User',
-    password: 'test123', // In production, this would be hashed
-    role: 'user' as const,
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    email: 'admin@sport.sn',
-    name: 'Admin User',
-    password: 'admin123',
-    role: 'admin' as const,
-    created_at: new Date().toISOString(),
-  },
-];
+import { createClient } from '@/lib/supabase/server';
+import bcrypt from 'bcryptjs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,26 +13,52 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Mock authentication - replace with Supabase in production
-    const user = mockUsers.find(u => u.email === email);
-    
-    if (!user || user.password !== password) {
+    const supabase = await createClient();
+
+    // Find user by email
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, email, name, phone, role, password_hash, created_at')
+      .eq('email', email)
+      .single();
+
+    if (error || !user) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
       );
     }
 
-    // In production, generate a real JWT token
+    // Check if password_hash exists (for backward compatibility)
+    if (!user.password_hash) {
+      return NextResponse.json(
+        { error: 'Account needs to be reset. Please register again.' },
+        { status: 401 }
+      );
+    }
+
+    // Verify password
+    const isValidPassword = await bcrypt.compare(password, user.password_hash);
+    
+    if (!isValidPassword) {
+      return NextResponse.json(
+        { error: 'Invalid email or password' },
+        { status: 401 }
+      );
+    }
+
+    // Generate token (in production, use proper JWT)
     const token = Buffer.from(JSON.stringify({ userId: user.id, email: user.email })).toString('base64');
 
-    const { password: _, ...userWithoutPassword } = user;
+    // Remove password_hash from response
+    const { password_hash, ...userWithoutPassword } = user;
 
     return NextResponse.json({
       user: userWithoutPassword,
       token,
     });
   } catch (error) {
+    console.error('Login error:', error);
     return NextResponse.json(
       { error: 'Login failed' },
       { status: 500 }

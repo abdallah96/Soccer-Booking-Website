@@ -9,7 +9,8 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Field } from '@/types';
 import { useAuthStore } from '@/lib/stores/authStore';
 import toast from 'react-hot-toast';
-import { TIME_SLOTS } from '@/lib/utils/constants';
+import { AVAILABLE_HOURS, PAYMENT_METHODS } from '@/lib/utils/constants';
+import { calculateBookingPrice, formatPrice, isDayRate } from '@/lib/utils/pricing';
 
 export default function FieldDetailPage() {
   const params = useParams();
@@ -18,7 +19,8 @@ export default function FieldDetailPage() {
   const [field, setField] = useState<Field | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState('');
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
+  const [selectedStartTime, setSelectedStartTime] = useState('');
+  const [selectedDuration, setSelectedDuration] = useState<60 | 90>(60);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'wave' | 'orange_money' | 'cash'>('wave');
 
   useEffect(() => {
@@ -47,8 +49,8 @@ export default function FieldDetailPage() {
       return;
     }
 
-    if (!selectedDate || !selectedTimeSlot) {
-      toast.error('Veuillez sélectionner une date et un créneau horaire');
+    if (!selectedDate || !selectedStartTime) {
+      toast.error('Veuillez sélectionner une date et une heure de début');
       return;
     }
 
@@ -59,8 +61,10 @@ export default function FieldDetailPage() {
         body: JSON.stringify({
           field_id: field?.id,
           date: selectedDate,
-          time_slot: selectedTimeSlot,
+          start_time: selectedStartTime,
+          duration: selectedDuration,
           payment_method: selectedPaymentMethod,
+          user_id: user.id,
         }),
       });
 
@@ -77,6 +81,11 @@ export default function FieldDetailPage() {
       toast.error('Erreur lors de la réservation');
     }
   };
+
+  // Calculate price dynamically
+  const calculatedPrice = selectedStartTime 
+    ? calculateBookingPrice(selectedStartTime, selectedDuration)
+    : 0;
 
   const today = new Date();
   const maxDate = new Date();
@@ -179,8 +188,13 @@ export default function FieldDetailPage() {
                     <div className="text-3xl font-black text-white">{field.capacity} joueurs</div>
                   </div>
                   <div>
-                    <div className="text-sm text-white/40 font-mono uppercase mb-2">Prix / heure</div>
-                    <div className="text-3xl font-black text-emerald-400">{field.price_per_hour.toLocaleString()} FCFA</div>
+                    <div className="text-sm text-white/40 font-mono uppercase mb-2">Tarifs</div>
+                    <div className="space-y-1">
+                      <div className="text-xl font-black text-emerald-400">20 000 FCFA</div>
+                      <div className="text-xs text-white/60 font-mono">Jour (8h-18h)</div>
+                      <div className="text-xl font-black text-blue-400">25 000 FCFA</div>
+                      <div className="text-xs text-white/60 font-mono">Nuit (19h-2h)</div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -220,20 +234,49 @@ export default function FieldDetailPage() {
 
                     <div>
                       <label className="block text-sm font-black text-white/80 mb-2 uppercase tracking-tight font-mono">
-                        Créneau horaire
+                        Heure de début
+                      </label>
+                      <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
+                        {AVAILABLE_HOURS.map((hour) => {
+                          const isDay = isDayRate(hour);
+                          return (
+                            <button
+                              key={hour}
+                              onClick={() => setSelectedStartTime(hour)}
+                              className={`px-3 py-2 border-2 text-xs font-light transition-all ${
+                                selectedStartTime === hour
+                                  ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300'
+                                  : isDay
+                                  ? 'border-emerald-500/30 bg-black/50 text-white/60 hover:border-emerald-500/50'
+                                  : 'border-blue-500/30 bg-black/50 text-white/60 hover:border-blue-500/50'
+                              }`}
+                            >
+                              {hour}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-black text-white/80 mb-2 uppercase tracking-tight font-mono">
+                        Durée
                       </label>
                       <div className="grid grid-cols-2 gap-3">
-                        {TIME_SLOTS.map((slot) => (
+                        {[
+                          { value: 60, label: '1 Heure' },
+                          { value: 90, label: '1 Heure 30' },
+                        ].map((option) => (
                           <button
-                            key={slot}
-                            onClick={() => setSelectedTimeSlot(slot)}
+                            key={option.value}
+                            onClick={() => setSelectedDuration(option.value as 60 | 90)}
                             className={`px-4 py-3 border-2 text-sm font-light transition-all ${
-                              selectedTimeSlot === slot
+                              selectedDuration === option.value
                                 ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300'
                                 : 'border-white/20 bg-black/50 text-white/60 hover:border-white/30'
                             }`}
                           >
-                            {slot}
+                            {option.label}
                           </button>
                         ))}
                       </div>
@@ -244,11 +287,7 @@ export default function FieldDetailPage() {
                         Méthode de paiement
                       </label>
                       <div className="space-y-3">
-                        {[
-                          { id: 'wave', name: 'Wave' },
-                          { id: 'orange_money', name: 'Orange Money' },
-                          { id: 'cash', name: 'Espèces' },
-                        ].map((method) => (
+                        {PAYMENT_METHODS.map((method) => (
                           <button
                             key={method.id}
                             onClick={() => setSelectedPaymentMethod(method.id as 'wave' | 'orange_money' | 'cash')}
@@ -265,13 +304,36 @@ export default function FieldDetailPage() {
                     </div>
 
                     <div className="pt-6 border-t border-white/10">
-                      <div className="flex items-center justify-between mb-6">
-                        <span className="text-white/60 font-light">Total</span>
-                        <span className="text-3xl font-black text-emerald-400">{field.price_per_hour.toLocaleString()} FCFA</span>
+                      <div className="space-y-3 mb-6">
+                        {selectedStartTime && (
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-white/60 font-light">
+                              {isDayRate(selectedStartTime) ? 'Tarif jour' : 'Tarif nuit'}
+                            </span>
+                            <span className="text-white font-mono">
+                              {isDayRate(selectedStartTime) ? '20 000' : '25 000'} FCFA/h
+                            </span>
+                          </div>
+                        )}
+                        {selectedStartTime && (
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-white/60 font-light">Durée</span>
+                            <span className="text-white font-mono">
+                              {selectedDuration === 60 ? '1h' : '1h30'}
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between pt-3 border-t border-white/10">
+                          <span className="text-white/80 font-light">Total</span>
+                          <span className="text-3xl font-black text-emerald-400">
+                            {calculatedPrice > 0 ? formatPrice(calculatedPrice) : '---'}
+                          </span>
+                        </div>
                       </div>
                       <button
                         onClick={handleBooking}
-                        className="w-full px-6 py-4 bg-emerald-500 text-black font-black hover:bg-emerald-400 transition-colors"
+                        disabled={!selectedDate || !selectedStartTime || calculatedPrice === 0}
+                        className="w-full px-6 py-4 bg-emerald-500 text-black font-black hover:bg-emerald-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         CONFIRMER LA RÉSERVATION
                       </button>

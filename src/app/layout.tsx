@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SportBook - Football Field Booking",
-  description: "Book football fields online with ease",
+  title: "Petit Camp - Réservation de Terrain",
+  description: "Réservez votre terrain de football à Petit Camp. Simple, rapide et fiable.",
 };
 
 export default function RootLayout({
