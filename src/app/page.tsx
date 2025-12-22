@@ -24,7 +24,7 @@ export default function Home() {
             <div className="lg:col-span-7 space-y-8 lg:space-y-12">
               <div className="space-y-4">
                 <div className="inline-block">
-                  <span className="text-emerald-400 text-sm font-mono tracking-[0.3em] uppercase">DAKAR</span>
+                  <span className="text-emerald-400 text-sm font-mono tracking-[0.3em] uppercase">Thiés</span>
                   <span className="text-white/40 text-sm font-mono mx-3">/</span>
                   <span className="text-blue-400 text-sm font-mono tracking-[0.3em] uppercase">FOOTBALL</span>
                 </div>
@@ -93,7 +93,7 @@ export default function Home() {
                     <div className="pt-4 border-t border-white/10">
                       <div className="text-xs text-white/40 font-mono mb-1">NOTRE TERRAIN</div>
                       <div className="text-3xl font-black text-white mb-2">PETIT CAMP</div>
-                      <div className="text-sm text-white/60 mb-4">Dakar · Sénégal</div>
+                      <div className="text-sm text-white/60 mb-4">Thiés · Sénégal</div>
                       
                       <div className="grid grid-cols-3 gap-3 mb-4">
                         <div className="bg-white/5 p-3 border border-white/10">
@@ -359,7 +359,7 @@ export default function Home() {
                 <div className="relative bg-white/5 backdrop-blur-md border border-white/10 p-8 min-h-[300px] flex flex-col justify-between group-hover:bg-white/10 transition-colors">
                   <div>
                     <div className="flex items-center justify-between mb-4">
-                      <span className="text-xs text-white/40 font-mono uppercase">Dakar</span>
+                      <span className="text-xs text-white/40 font-mono uppercase">Thiés</span>
                       <span className="text-sm font-black text-emerald-400">4.8★</span>
                     </div>
                     <h3 className="text-4xl font-black text-white mb-3">PETIT CAMP</h3>

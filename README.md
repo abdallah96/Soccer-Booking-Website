@@ -1,10 +1,10 @@
 # Soccer-Booking-Website
 
-Plateforme de réservation de terrains de football à Dakar, Sénégal. Réservez facilement des terrains, rassemblez votre équipe et jouez.
+Plateforme de réservation de terrains de football à Thiés, Sénégal. Réservez facilement des terrains, rassemblez votre équipe et jouez.
 
 ## 🚀 Fonctionnalités
 
-- **Recherche de terrains** : Parcourez les terrains disponibles à Dakar
+- **Recherche de terrains** : Parcourez les terrains disponibles à Thiés
 - **Réservation en ligne** : Réservez votre créneau en quelques clics
 - **Gestion des réservations** : Consultez et gérez vos réservations
 - **Authentification** : Système de connexion/inscription sécurisé

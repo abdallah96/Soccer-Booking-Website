@@ -1,9 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 
 // Load environment variables from .env.local
-// Note: Make sure .env.local exists in project root
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL!;
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 if (!supabaseUrl || !supabaseKey) {
@@ -24,7 +27,7 @@ async function seed() {
       id: 'petit-camp-1',
       name: 'Petit Camp',
       description: 'Terrain de football professionnel avec installations modernes. Éclairage de qualité, vestiaires équipés, parking sécurisé et rafraîchissements disponibles.',
-      location: 'Dakar, Sénégal',
+      location: 'Thiés, Sénégal',
       price_per_hour: 20000,
       capacity: 22,
       rating: 4.8,

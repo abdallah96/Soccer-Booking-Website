@@ -36,7 +36,6 @@ export default function RegisterPage() {
           phone: data.phone,
         }),
       });
-
       const result = await response.json();
 
       if (!response.ok) {
@@ -83,6 +82,7 @@ export default function RegisterPage() {
                 <Input
                   label="Nom complet"
                   type="text"
+                  required
                   placeholder="Jean Dupont"
                   error={errors.name?.message}
                   {...register('name')}
@@ -101,8 +101,9 @@ export default function RegisterPage() {
 
               <div>
                 <Input
-                  label="Numéro de téléphone (Optionnel)"
+                  label="Numéro de téléphone"
                   type="tel"
+                  required
                   placeholder="+221XXXXXXXXX"
                   error={errors.phone?.message}
                   helperText="Nous l'utiliserons pour vous notifier de vos réservations"

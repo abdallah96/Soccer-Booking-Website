@@ -11,7 +11,7 @@ INSERT INTO fields (name, description, location, price_per_hour, capacity, ratin
 (
   'Stadium Elite Football Field',
   'Professional-grade football field with modern facilities',
-  'Downtown Sports Complex, Dakar',
+  'Downtown Sports Complex, Thiés',
   15000,
   22,
   4.8,
@@ -21,7 +21,7 @@ INSERT INTO fields (name, description, location, price_per_hour, capacity, ratin
 (
   'Sunset Valley Field',
   'Beautiful field with evening floodlights and great views',
-  'Plateau, Dakar',
+  'Plateau, Thiés',
   12000,
   20,
   4.5,
@@ -31,7 +31,7 @@ INSERT INTO fields (name, description, location, price_per_hour, capacity, ratin
 (
   'Riverside Sports Arena',
   'Spacious field perfect for tournaments and big games',
-  'Île de Gorée, Dakar',
+  'Île de Gorée, Thiés',
   18000,
   24,
   4.9,
@@ -41,7 +41,7 @@ INSERT INTO fields (name, description, location, price_per_hour, capacity, ratin
 (
   'Petite Côte Mini Field',
   'Perfect for casual games and youth tournaments',
-  'Petite Côte, Dakar',
+  'Petite Côte, Thiés',
   8000,
   16,
   4.2,
@@ -51,7 +51,7 @@ INSERT INTO fields (name, description, location, price_per_hour, capacity, ratin
 (
   'Grand Yoff Premier Field',
   'Top-tier field with all premium amenities',
-  'Grand Yoff, Dakar',
+  'Grand Yoff, Thiés',
   20000,
   24,
   4.9,

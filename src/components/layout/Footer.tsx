@@ -123,7 +123,7 @@ export const Footer = () => {
                 </a>
               </li>
               <li className="text-white/60">
-                Dakar, Sénégal
+                Thiés, Sénégal
               </li>
             </ul>
           </div>

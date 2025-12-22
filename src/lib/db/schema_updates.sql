@@ -14,7 +14,7 @@ VALUES (
   'petit-camp-1',
   'Petit Camp',
   'Terrain de football professionnel avec installations modernes. Éclairage de qualité, vestiaires équipés, parking sécurisé et rafraîchissements disponibles.',
-  'Dakar, Sénégal',
+  'Thiés, Sénégal',
   20000,
   22,
   4.8,
@@ -26,7 +26,7 @@ VALUES (
 -- VALUES (
 --   'Petit Camp',
 --   'Terrain de football professionnel avec installations modernes. Éclairage de qualité, vestiaires équipés, parking sécurisé et rafraîchissements disponibles.',
---   'Dakar, Sénégal',
+--   'Thiés, Sénégal',
 --   20000,
 --   22,
 --   4.8,

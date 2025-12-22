@@ -32,7 +32,7 @@ export const PETIT_CAMP_FIELD = {
   id: 'petit-camp-1',
   name: 'Petit Camp',
   description: 'Terrain de football professionnel avec installations modernes. Éclairage de qualité, vestiaires équipés, parking sécurisé et rafraîchissements disponibles.',
-  location: 'Dakar, Sénégal',
+  location: 'Thiés, Sénégal',
   price_per_hour: 20000, // Base price, actual price calculated dynamically based on time
   capacity: 22,
   facilities: ['Éclairage', 'Vestiaires', 'Parking', 'Rafraîchissements'],

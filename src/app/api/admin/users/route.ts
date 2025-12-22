@@ -4,10 +4,27 @@ import bcrypt from 'bcryptjs';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, name, phone } = await request.json();
+    const { email, password, name, role, admin_user_id } = await request.json();
+    
+    const supabase = await createClient();
+    
+    // Verify admin_user_id is actually an admin
+    if (admin_user_id) {
+      const { data: admin } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', admin_user_id)
+        .single();
+      
+      if (!admin || admin.role !== 'admin') {
+        return NextResponse.json(
+          { error: 'Unauthorized' },
+          { status: 401 }
+        );
+      }
+    }
 
-    // Validation
-    if (!phone || !password || !name) {
+    if (!email || !password || !name) {
       return NextResponse.json(
         { error: 'Email, password, and name are required' },
         { status: 400 }
@@ -21,10 +38,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = await createClient();
-
     // Check if user exists
-    const { data: existingUser, error: checkError } = await supabase
+    const { data: existingUser } = await supabase
       .from('users')
       .select('id')
       .eq('email', email)
@@ -41,38 +56,33 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user
-    // Note: You need to add password_hash column to users table if not exists
     const { data: user, error } = await supabase
       .from('users')
       .insert({
         email,
         name,
-        phone: phone || null,
         password_hash: hashedPassword,
-        role: 'user'
+        role: role || 'admin',
       })
-      .select('id, email, name, phone, role, created_at')
+      .select('id, email, name, role, created_at')
       .single();
+
     if (error) {
-      console.error('Registration error:', error);
+      console.error('User creation error:', error);
       return NextResponse.json(
-        { error: 'Failed to create user. Please try again.' },
+        { error: 'Failed to create user' },
         { status: 500 }
       );
     }
 
-    // Generate a simple token (in production, use proper JWT)
-    const token = Buffer.from(JSON.stringify({ userId: user.id, email: user.email })).toString('base64');
-
     return NextResponse.json({
       user,
-      token,
-      message: 'User created successfully'
+      message: 'User created successfully',
     });
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error('User creation error:', error);
     return NextResponse.json(
-      { error: 'Registration failed' },
+      { error: 'Failed to create user' },
       { status: 500 }
     );
   }

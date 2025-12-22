@@ -58,7 +58,7 @@ async function seed() {
       {
         name: 'Stadium Elite Football Field',
         description: 'Professional-grade football field with modern facilities',
-        location: 'Downtown Sports Complex, Dakar',
+        location: 'Downtown Sports Complex, Thiés',
         price_per_hour: 15000,
         capacity: 22,
         rating: 4.8,
@@ -71,7 +71,7 @@ async function seed() {
       {
         name: 'Sunset Valley Field',
         description: 'Beautiful field with evening floodlights and great views',
-        location: 'Plateau, Dakar',
+        location: 'Plateau, Thiés',
         price_per_hour: 12000,
         capacity: 20,
         rating: 4.5,
@@ -83,7 +83,7 @@ async function seed() {
       {
         name: 'Riverside Sports Arena',
         description: 'Spacious field perfect for tournaments and big games',
-        location: 'Île de Gorée, Dakar',
+        location: 'Île de Gorée, Thiés',
         price_per_hour: 18000,
         capacity: 24,
         rating: 4.9,
@@ -101,7 +101,7 @@ async function seed() {
       {
         name: 'Petite Côte Mini Field',
         description: 'Perfect for casual games and youth tournaments',
-        location: 'Petite Côte, Dakar',
+        location: 'Petite Côte, Thiés',
         price_per_hour: 8000,
         capacity: 16,
         rating: 4.2,
@@ -113,7 +113,7 @@ async function seed() {
       {
         name: 'Grand Yoff Premier Field',
         description: 'Top-tier field with all premium amenities',
-        location: 'Grand Yoff, Dakar',
+        location: 'Grand Yoff, Thiés',
         price_per_hour: 20000,
         capacity: 24,
         rating: 4.9,

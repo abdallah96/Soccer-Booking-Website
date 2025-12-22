@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { Calendar } from '@/components/ui/Calendar';
 import { Field } from '@/types';
 import { useAuthStore } from '@/lib/stores/authStore';
 import toast from 'react-hot-toast';
@@ -22,6 +23,7 @@ export default function FieldDetailPage() {
   const [selectedStartTime, setSelectedStartTime] = useState('');
   const [selectedDuration, setSelectedDuration] = useState<60 | 90>(60);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'wave' | 'orange_money' | 'cash'>('wave');
+  const [bookedSlots, setBookedSlots] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchField = async () => {
@@ -41,6 +43,29 @@ export default function FieldDetailPage() {
       fetchField();
     }
   }, [params.id]);
+
+  useEffect(() => {
+    const fetchAvailability = async () => {
+      if (!selectedDate || !field?.id) {
+        setBookedSlots(new Set());
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `/api/bookings/availability?field_id=${field.id}&date=${selectedDate}`
+        );
+        const data = await response.json();
+        if (data.bookedSlots) {
+          setBookedSlots(new Set(data.bookedSlots));
+        }
+      } catch (error) {
+        console.error('Failed to fetch availability:', error);
+      }
+    };
+
+    fetchAvailability();
+  }, [selectedDate, field?.id]);
 
   const handleBooking = async () => {
     if (!user) {
@@ -222,13 +247,11 @@ export default function FieldDetailPage() {
                       <label className="block text-sm font-black text-white/80 mb-2 uppercase tracking-tight font-mono">
                         Date
                       </label>
-                      <input
-                        type="date"
-                        min={getMinDate()}
-                        max={getMaxDate()}
-                        value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
-                        className="w-full px-4 py-3 bg-black/50 border-2 border-white/20 text-white focus:outline-none focus:border-emerald-500 transition-all font-light"
+                      <Calendar
+                        selectedDate={selectedDate}
+                        onDateSelect={setSelectedDate}
+                        minDate={getMinDate()}
+                        maxDate={getMaxDate()}
                       />
                     </div>
 
@@ -239,23 +262,38 @@ export default function FieldDetailPage() {
                       <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
                         {AVAILABLE_HOURS.map((hour) => {
                           const isDay = isDayRate(hour);
+                          const isBooked = bookedSlots.has(hour);
+                          const isDisabled = isBooked;
+                          
                           return (
                             <button
                               key={hour}
-                              onClick={() => setSelectedStartTime(hour)}
-                              className={`px-3 py-2 border-2 text-xs font-light transition-all ${
-                                selectedStartTime === hour
+                              onClick={() => !isDisabled && setSelectedStartTime(hour)}
+                              disabled={isDisabled}
+                              className={`px-3 py-2 border-2 text-xs font-light transition-all relative ${
+                                isDisabled
+                                  ? 'border-red-500/50 bg-red-500/10 text-red-400/50 cursor-not-allowed'
+                                  : selectedStartTime === hour
                                   ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300'
                                   : isDay
                                   ? 'border-emerald-500/30 bg-black/50 text-white/60 hover:border-emerald-500/50'
                                   : 'border-blue-500/30 bg-black/50 text-white/60 hover:border-blue-500/50'
                               }`}
+                              title={isBooked ? 'Créneau déjà réservé' : ''}
                             >
                               {hour}
+                              {isBooked && (
+                                <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+                              )}
                             </button>
                           );
                         })}
                       </div>
+                      {bookedSlots.size > 0 && (
+                        <p className="text-xs text-white/40 mt-2 font-light">
+                          ⚠️ Les créneaux en rouge sont déjà réservés
+                        </p>
+                      )}
                     </div>
 
                     <div>

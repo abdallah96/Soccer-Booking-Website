@@ -63,21 +63,35 @@ export const Header = () => {
           </Link>
 
           <nav className="hidden lg:flex items-center space-x-6">
-            <Link 
-              href="/" 
-              className="text-black hover:text-emerald-500 font-bold text-sm tracking-tight transition-colors"
-            >
-              ACCUEIL
-            </Link>
-            <Link 
-              href="/fields" 
-              className="text-black hover:text-emerald-500 font-bold text-sm tracking-tight transition-colors"
-            >
-              TERRAINS
-            </Link>
-            
-            {user ? (
+            {user?.role === 'admin' ? (
               <>
+                <Link 
+                  href="/admin" 
+                  className="px-4 py-2 bg-black text-white font-black text-sm tracking-tight hover:bg-black/80 transition-colors"
+                >
+                  ADMIN
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="text-red-600 hover:text-red-700 font-bold text-sm tracking-tight transition-colors"
+                >
+                  DÉCONNEXION
+                </button>
+              </>
+            ) : user ? (
+              <>
+                <Link 
+                  href="/" 
+                  className="text-black hover:text-emerald-500 font-bold text-sm tracking-tight transition-colors"
+                >
+                  ACCUEIL
+                </Link>
+                <Link 
+                  href="/fields" 
+                  className="text-black hover:text-emerald-500 font-bold text-sm tracking-tight transition-colors"
+                >
+                  TERRAINS
+                </Link>
                 <Link 
                   href="/my-bookings" 
                   className="text-black hover:text-emerald-500 font-bold text-sm tracking-tight transition-colors"
@@ -93,14 +107,6 @@ export const Header = () => {
                   </span>
                   {user.name.toUpperCase()}
                 </Link>
-                {user.role === 'admin' && (
-                  <Link 
-                    href="/admin" 
-                    className="px-4 py-2 bg-black text-white font-black text-sm tracking-tight hover:bg-black/80 transition-colors"
-                  >
-                    ADMIN
-                  </Link>
-                )}
                 <button
                   onClick={handleLogout}
                   className="text-red-600 hover:text-red-700 font-bold text-sm tracking-tight transition-colors"
@@ -110,6 +116,18 @@ export const Header = () => {
               </>
             ) : (
               <>
+                <Link 
+                  href="/" 
+                  className="text-black hover:text-emerald-500 font-bold text-sm tracking-tight transition-colors"
+                >
+                  ACCUEIL
+                </Link>
+                <Link 
+                  href="/fields" 
+                  className="text-black hover:text-emerald-500 font-bold text-sm tracking-tight transition-colors"
+                >
+                  TERRAINS
+                </Link>
                 <Link 
                   href="/auth/login" 
                   className="text-black hover:text-emerald-500 font-bold text-sm tracking-tight transition-colors"
@@ -153,23 +171,41 @@ export const Header = () => {
       {showMenu && (
         <div className="lg:hidden border-t-2 border-black/10 bg-white/95 backdrop-blur-xl">
           <nav className="px-6 py-6 space-y-3">
-            <Link 
-              href="/" 
-              className="block py-3 text-black font-bold text-sm tracking-tight hover:text-emerald-500 transition-colors"
-              onClick={() => setShowMenu(false)}
-            >
-              ACCUEIL
-            </Link>
-            <Link 
-              href="/fields" 
-              className="block py-3 text-black font-bold text-sm tracking-tight hover:text-emerald-500 transition-colors"
-              onClick={() => setShowMenu(false)}
-            >
-              TERRAINS
-            </Link>
-            
-            {user ? (
+            {user?.role === 'admin' ? (
               <>
+                <Link 
+                  href="/admin" 
+                  className="block py-3 px-4 bg-black text-white font-black text-sm tracking-tight text-center"
+                  onClick={() => setShowMenu(false)}
+                >
+                  ADMIN
+                </Link>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setShowMenu(false);
+                  }}
+                  className="block w-full text-left py-3 text-red-600 hover:text-red-700 font-bold text-sm tracking-tight transition-colors"
+                >
+                  DÉCONNEXION
+                </button>
+              </>
+            ) : user ? (
+              <>
+                <Link 
+                  href="/" 
+                  className="block py-3 text-black font-bold text-sm tracking-tight hover:text-emerald-500 transition-colors"
+                  onClick={() => setShowMenu(false)}
+                >
+                  ACCUEIL
+                </Link>
+                <Link 
+                  href="/fields" 
+                  className="block py-3 text-black font-bold text-sm tracking-tight hover:text-emerald-500 transition-colors"
+                  onClick={() => setShowMenu(false)}
+                >
+                  TERRAINS
+                </Link>
                 <Link 
                   href="/my-bookings" 
                   className="block py-3 text-black font-bold text-sm tracking-tight hover:text-emerald-500 transition-colors"
@@ -187,15 +223,6 @@ export const Header = () => {
                   </span>
                   {user.name.toUpperCase()}
                 </Link>
-                {user.role === 'admin' && (
-                  <Link 
-                    href="/admin" 
-                    className="block py-3 px-4 bg-black text-white font-black text-sm tracking-tight text-center"
-                    onClick={() => setShowMenu(false)}
-                  >
-                    ADMIN
-                  </Link>
-                )}
                 <button
                   onClick={() => {
                     handleLogout();
@@ -208,6 +235,20 @@ export const Header = () => {
               </>
             ) : (
               <>
+                <Link 
+                  href="/" 
+                  className="block py-3 text-black font-bold text-sm tracking-tight hover:text-emerald-500 transition-colors"
+                  onClick={() => setShowMenu(false)}
+                >
+                  ACCUEIL
+                </Link>
+                <Link 
+                  href="/fields" 
+                  className="block py-3 text-black font-bold text-sm tracking-tight hover:text-emerald-500 transition-colors"
+                  onClick={() => setShowMenu(false)}
+                >
+                  TERRAINS
+                </Link>
                 <Link 
                   href="/auth/login" 
                   className="block py-3 text-black font-bold text-sm tracking-tight hover:text-emerald-500 transition-colors"

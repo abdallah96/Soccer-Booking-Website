@@ -43,7 +43,13 @@ export default function LoginPage() {
       setUser(result.user);
       setToken(result.token);
       toast.success('Connexion réussie !');
-      router.push('/fields');
+      
+      // Redirect admins to admin panel, regular users to fields
+      if (result.user.role === 'admin') {
+        router.push('/admin');
+      } else {
+        router.push('/fields');
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Échec de la connexion';
       setError(message);
