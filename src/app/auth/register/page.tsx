@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
@@ -10,11 +10,16 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { RegisterSchema, RegisterInput } from '@/lib/utils/validation';
 import { useAuthStore } from '@/lib/stores/authStore';
+import { trackPageView, trackAuth, trackAction } from '@/lib/utils/analytics';
 
 export default function RegisterPage() {
   const router = useRouter();
   const { setUser, setToken, setError } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    trackPageView('register');
+  }, []);
   const {
     register,
     handleSubmit,
@@ -41,11 +46,16 @@ export default function RegisterPage() {
       if (!response.ok) {
         setError(result.error);
         toast.error(result.error);
+        trackAuth('registration_failed', { error: result.error });
         return;
       }
 
       setUser(result.user);
       setToken(result.token);
+      trackAuth('user_registered', { 
+        user_id: result.user.id,
+        has_phone: !!data.phone 
+      });
       toast.success('Inscription réussie !');
       router.push('/fields');
     } catch (error) {
@@ -77,7 +87,11 @@ export default function RegisterPage() {
               <p className="text-white/60 font-light">Créez votre compte et commencez à réserver</p>
             </div>
             
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <form 
+              onSubmit={handleSubmit(onSubmit)} 
+              className="space-y-5"
+              onFocus={() => trackAction('button_clicked', 'register_form_started')}
+            >
               <div>
                 <Input
                   label="Nom complet"

@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: 'Registration failed' },
       { status: 500 }
-    );
+    );''
   }
 }
 

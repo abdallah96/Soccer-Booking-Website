@@ -12,6 +12,7 @@ import { useAuthStore } from '@/lib/stores/authStore';
 import toast from 'react-hot-toast';
 import { AVAILABLE_HOURS, PAYMENT_METHODS } from '@/lib/utils/constants';
 import { calculateBookingPrice, formatPrice, isDayRate } from '@/lib/utils/pricing';
+import { trackPageView, trackField, trackPayment, trackBooking } from '@/lib/utils/analytics';
 
 export default function FieldDetailPage() {
   const params = useParams();
@@ -26,11 +27,20 @@ export default function FieldDetailPage() {
   const [bookedSlots, setBookedSlots] = useState<Set<string>>(new Set());
 
   useEffect(() => {
+    if (params.id) {
+      trackPageView('field_detail', { field_id: params.id });
+    }
+  }, [params.id]);
+
+  useEffect(() => {
     const fetchField = async () => {
       try {
         const response = await fetch(`/api/fields/${params.id}`);
         const data = await response.json();
         setField(data.field);
+        if (data.field) {
+          trackField('field_viewed', data.field.id);
+        }
       } catch (error) {
         console.error('Failed to fetch field:', error);
         toast.error('Erreur lors du chargement du terrain');
@@ -58,6 +68,7 @@ export default function FieldDetailPage() {
         const data = await response.json();
         if (data.bookedSlots) {
           setBookedSlots(new Set(data.bookedSlots));
+          trackField('availability_checked', field.id, { date: selectedDate });
         }
       } catch (error) {
         console.error('Failed to fetch availability:', error);
@@ -97,8 +108,24 @@ export default function FieldDetailPage() {
 
       if (!response.ok) {
         toast.error(result.error || 'Erreur lors de la réservation');
+        trackBooking('booking_created', { 
+          success: false, 
+          error: result.error,
+          field_id: field?.id 
+        });
         return;
       }
+
+      trackBooking('booking_created', {
+        success: true,
+        booking_id: result.booking?.id,
+        field_id: field?.id,
+        date: selectedDate,
+        start_time: selectedStartTime,
+        duration: selectedDuration,
+        payment_method: selectedPaymentMethod,
+        amount: calculatedPrice,
+      });
 
       toast.success('Réservation créée avec succès !');
       router.push('/my-bookings');
@@ -328,7 +355,10 @@ export default function FieldDetailPage() {
                         {PAYMENT_METHODS.map((method) => (
                           <button
                             key={method.id}
-                            onClick={() => setSelectedPaymentMethod(method.id as 'wave' | 'orange_money' | 'cash')}
+                            onClick={() => {
+                              setSelectedPaymentMethod(method.id as 'wave' | 'orange_money' | 'cash');
+                              trackPayment('payment_method_selected', { method: method.id });
+                            }}
                             className={`w-full px-4 py-3 border-2 text-left font-light transition-all ${
                               selectedPaymentMethod === method.id
                                 ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300'

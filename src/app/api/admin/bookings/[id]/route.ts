@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { trackEventServer } from '@/lib/utils/analytics-server';
 
 export async function PUT(
   request: NextRequest,
@@ -32,6 +33,18 @@ export async function PUT(
         { status: 500 }
       );
     }
+
+    // Track booking status change
+    await trackEventServer(
+      'booking',
+      status === 'confirmed' ? 'booking_confirmed' : 'booking_cancelled',
+      {
+        booking_id: bookingId,
+        booking: booking,
+        status,
+      },
+      booking?.user_id
+    );
 
     return NextResponse.json({ booking, message: 'Booking updated successfully' });
   } catch (error) {

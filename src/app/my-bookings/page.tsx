@@ -1,8 +1,15 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
+import { trackPageView, trackBooking } from '@/lib/utils/analytics';
 
 export default function MyBookingsPage() {
+  useEffect(() => {
+    trackPageView('my_bookings');
+    trackBooking('booking_viewed');
+  }, []);
+
   return (
     <div className="min-h-screen bg-black py-16 md:py-20 px-6 sm:px-8 lg:px-12">
       <div className="max-w-4xl mx-auto text-white text-center">

@@ -4,10 +4,15 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Field } from '@/types';
+import { trackPageView, trackField } from '@/lib/utils/analytics';
 
 export default function FieldsPage() {
   const [field, setField] = useState<Field | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    trackPageView('fields_list');
+  }, []);
 
   useEffect(() => {
     const fetchField = async () => {
@@ -16,7 +21,9 @@ export default function FieldsPage() {
         const data = await response.json();
         // Get first field (Petit Camp)
         if (data.fields && data.fields.length > 0) {
-          setField(data.fields[0]);
+          const fetchedField = data.fields[0];
+          setField(fetchedField);
+          trackField('field_viewed', fetchedField.id);
         }
       } catch (error) {
         console.error('Failed to fetch field:', error);
@@ -65,7 +72,11 @@ export default function FieldsPage() {
           </p>
         </div>
 
-        <Link href={`/fields/${field.id}`} className="block group">
+        <Link 
+          href={`/fields/${field.id}`} 
+          className="block group"
+          onClick={() => trackField('field_viewed', field.id, { source: 'fields_list' })}
+        >
           <div className="relative">
             <div className="absolute -bottom-2 -right-2 w-full h-full border-2 border-emerald-500/30 group-hover:border-emerald-500/50 transition-colors"></div>
             <div className="relative bg-white/5 backdrop-blur-md border border-white/10 overflow-hidden group-hover:bg-white/10 transition-colors">

@@ -6,6 +6,7 @@ import { useAuthStore } from '@/lib/stores/authStore';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { LOGO_URL, isValidLogoUrl } from '@/lib/utils/constants';
+import { trackAuth, trackAction } from '@/lib/utils/analytics';
 
 export const Header = () => {
   const router = useRouter();
@@ -22,6 +23,7 @@ export const Header = () => {
   }, []);
 
   const handleLogout = () => {
+    trackAuth('user_logged_out', { user_id: user?.id });
     logout();
     setShowMenu(false);
     router.push('/');

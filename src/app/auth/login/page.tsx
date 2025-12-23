@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
@@ -10,11 +10,16 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { LoginSchema, LoginInput } from '@/lib/utils/validation';
 import { useAuthStore } from '@/lib/stores/authStore';
+import { trackPageView, trackAuth, trackAction } from '@/lib/utils/analytics';
 
 export default function LoginPage() {
   const router = useRouter();
   const { setUser, setToken, setError } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    trackPageView('login');
+  }, []);
   const {
     register,
     handleSubmit,
@@ -37,11 +42,16 @@ export default function LoginPage() {
       if (!response.ok) {
         setError(result.error);
         toast.error(result.error);
+        trackAuth('login_failed', { error: result.error });
         return;
       }
 
       setUser(result.user);
       setToken(result.token);
+      trackAuth('user_logged_in', { 
+        user_id: result.user.id,
+        role: result.user.role 
+      });
       toast.success('Connexion réussie !');
       
       // Redirect admins to admin panel, regular users to fields
@@ -79,7 +89,11 @@ export default function LoginPage() {
               <p className="text-white/60 font-light">Connectez-vous à votre compte SportBook</p>
             </div>
             
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <form 
+              onSubmit={handleSubmit(onSubmit)} 
+              className="space-y-6"
+              onFocus={() => trackAction('button_clicked', 'login_form_started')}
+            >
               <div>
                 <Input
                   label="Adresse Email"

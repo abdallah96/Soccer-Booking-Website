@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { calculateBookingPrice } from '@/lib/utils/pricing';
+import { trackEventServer } from '@/lib/utils/analytics-server';
 
 export async function POST(request: Request) {
   try {
@@ -112,6 +113,19 @@ export async function POST(request: Request) {
       console.error('Time slot update error:', timeSlotError);
       // Don't fail the booking if time slot update fails
     }
+
+    // Track booking creation server-side
+    await trackEventServer('booking', 'booking_created', {
+      booking_id: booking.id,
+      field_id: field_id,
+      user_id: user_id,
+      date,
+      start_time,
+      duration,
+      payment_method,
+      amount,
+      success: true,
+    }, user_id);
 
     return NextResponse.json({
       booking,

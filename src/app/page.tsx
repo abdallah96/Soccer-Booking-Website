@@ -1,11 +1,17 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/lib/stores/authStore';
+import { trackPageView, trackAction } from '@/lib/utils/analytics';
 
 export default function Home() {
   const { user } = useAuthStore();
+
+  useEffect(() => {
+    trackPageView('home');
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden bg-white">
@@ -43,7 +49,11 @@ export default function Home() {
               </p>
 
               <div className="flex flex-wrap gap-4 pt-4">
-                <Link href="/fields" className="group">
+                <Link 
+                  href="/fields" 
+                  className="group"
+                  onClick={() => trackAction('link_clicked', 'book_now_home')}
+                >
                   <div className="relative">
                     <div className="absolute inset-0 bg-emerald-500 blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
                     <button className="relative px-10 py-5 bg-emerald-500 text-black font-black text-lg tracking-tight hover:bg-emerald-400 transition-colors transform group-hover:scale-105">
@@ -53,7 +63,11 @@ export default function Home() {
                 </Link>
 
                 {!user && (
-                  <Link href="/auth/register" className="group">
+                  <Link 
+                    href="/auth/register" 
+                    className="group"
+                    onClick={() => trackAction('link_clicked', 'register_home')}
+                  >
                     <button className="px-10 py-5 border-2 border-white/30 text-white font-bold text-lg tracking-tight hover:border-white/50 hover:bg-white/5 transition-all backdrop-blur-sm">
                       REJOINDRE GRATUITEMENT
                     </button>
@@ -346,7 +360,11 @@ export default function Home() {
             </h2>
             <div className="flex items-center justify-between">
               <p className="text-xl text-white/60 font-light">Terrain professionnel. Installations modernes. Disponible maintenant.</p>
-              <Link href="/fields" className="text-white/80 hover:text-white font-bold text-sm font-mono tracking-wider border-b-2 border-white/30 hover:border-white transition-colors">
+              <Link 
+                href="/fields" 
+                className="text-white/80 hover:text-white font-bold text-sm font-mono tracking-wider border-b-2 border-white/30 hover:border-white transition-colors"
+                onClick={() => trackAction('link_clicked', 'book_from_field_section')}
+              >
                 RÉSERVER →
               </Link>
             </div>
@@ -403,7 +421,11 @@ export default function Home() {
                   : 'Réservez votre terrain à Petit Camp. Simple, rapide et fiable.'}
               </p>
           
-          <Link href={user ? '/fields' : '/auth/register'} className="inline-block group">
+          <Link 
+            href={user ? '/fields' : '/auth/register'} 
+            className="inline-block group"
+            onClick={() => trackAction('link_clicked', user ? 'browse_fields_cta' : 'start_free_cta')}
+          >
             <div className="relative">
               <div className="absolute inset-0 bg-black blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
               <button className="relative px-12 py-6 bg-black text-white font-black text-xl tracking-tight hover:bg-black/90 transition-colors transform group-hover:scale-105">
