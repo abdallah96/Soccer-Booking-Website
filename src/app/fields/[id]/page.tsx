@@ -7,19 +7,20 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Calendar } from '@/components/ui/Calendar';
-import { Field } from '@/types';
+import { PriceDisplay } from '@/components/fields/PriceDisplay';
+import { useField } from '@/lib/hooks/useField';
 import { useAuthStore } from '@/lib/stores/authStore';
 import toast from 'react-hot-toast';
 import { AVAILABLE_HOURS, PAYMENT_METHODS } from '@/lib/utils/constants';
 import { calculateBookingPrice, formatPrice, isDayRate } from '@/lib/utils/pricing';
+import { PRICING } from '@/lib/config/constants';
 import { trackPageView, trackField, trackPayment, trackBooking } from '@/lib/utils/analytics';
 
 export default function FieldDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuthStore();
-  const [field, setField] = useState<Field | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { field, isLoading, error } = useField(params.id as string);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedStartTime, setSelectedStartTime] = useState('');
   const [selectedDuration, setSelectedDuration] = useState<60 | 90>(60);
@@ -32,27 +33,6 @@ export default function FieldDetailPage() {
     }
   }, [params.id]);
 
-  useEffect(() => {
-    const fetchField = async () => {
-      try {
-        const response = await fetch(`/api/fields/${params.id}`);
-        const data = await response.json();
-        setField(data.field);
-        if (data.field) {
-          trackField('field_viewed', data.field.id);
-        }
-      } catch (error) {
-        console.error('Failed to fetch field:', error);
-        toast.error('Erreur lors du chargement du terrain');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (params.id) {
-      fetchField();
-    }
-  }, [params.id]);
 
   useEffect(() => {
     const fetchAvailability = async () => {
@@ -136,7 +116,7 @@ export default function FieldDetailPage() {
 
   // Calculate price dynamically
   const calculatedPrice = selectedStartTime && field
-    ? calculateBookingPrice(selectedStartTime, selectedDuration, field.price_per_hour || 20000)
+    ? calculateBookingPrice(selectedStartTime, selectedDuration, field.price_per_hour || PRICING.DEFAULT_DAY_RATE)
     : 0;
 
   const today = new Date();
@@ -155,13 +135,15 @@ export default function FieldDetailPage() {
     return <LoadingSpinner message="Chargement du terrain..." />;
   }
 
-  if (!field) {
+  if (error || !field) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center px-6">
         <div className="text-center">
           <div className="text-8xl mb-6">⚽</div>
           <h1 className="text-4xl font-black text-white mb-4">TERRAIN INTROUVABLE</h1>
-          <p className="text-white/60 mb-8 font-light">Le terrain que vous recherchez n'existe pas.</p>
+          <p className="text-white/60 mb-8 font-light">
+            {error || 'Le terrain que vous recherchez n\'existe pas.'}
+          </p>
           <Link href="/fields">
             <button className="px-8 py-4 bg-emerald-500 text-black font-black hover:bg-emerald-400 transition-colors">
               RETOUR AUX TERRAINS
@@ -240,17 +222,11 @@ export default function FieldDetailPage() {
                     <div className="text-3xl font-black text-white">{field.capacity} joueurs</div>
                   </div>
                   <div>
-                    <div className="text-sm text-white/40 font-mono uppercase mb-2">Tarifs</div>
-                    <div className="space-y-1">
-                      <div className="text-xl font-black text-emerald-400">
-                        {(field.price_per_hour || 20000).toLocaleString()} FCFA
-                      </div>
-                      <div className="text-xs text-white/60 font-mono">Jour (8h-18h)</div>
-                      <div className="text-xl font-black text-blue-400">
-                        {Math.round((field.price_per_hour || 20000) * 1.25).toLocaleString()} FCFA
-                      </div>
-                      <div className="text-xs text-white/60 font-mono">Nuit (19h-2h)</div>
-                    </div>
+                    <PriceDisplay 
+                      pricePerHour={field.price_per_hour || 20000} 
+                      variant="detailed"
+                      showLabel={true}
+                    />
                   </div>
                 </div>
 

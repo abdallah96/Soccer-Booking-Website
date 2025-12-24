@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { calculateBookingPrice } from '@/lib/utils/pricing';
 import { trackEventServer } from '@/lib/utils/analytics-server';
+import { PRICING } from '@/lib/config/constants';
 
 export async function POST(request: Request) {
   try {
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
       .eq('id', field_id)
       .single();
 
-    const basePricePerHour = field?.price_per_hour || 20000;
+    const basePricePerHour = field?.price_per_hour || PRICING.DEFAULT_DAY_RATE;
 
     if (fieldError || !field) {
       // If field not in DB, allow booking with field_id (for Petit Camp)

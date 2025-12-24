@@ -1,37 +1,20 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
+import { PriceDisplay } from '@/components/fields/PriceDisplay';
+import { useFields } from '@/lib/hooks/useFields';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { trackPageView, trackAction } from '@/lib/utils/analytics';
-import { Field } from '@/types';
+import { PRICING, FIELD_CONFIG } from '@/lib/config/constants';
 
 export default function Home() {
   const { user } = useAuthStore();
-  const [fields, setFields] = useState<Field[]>([]);
-  const [isLoadingFields, setIsLoadingFields] = useState(true);
+  const { fields, isLoading: isLoadingFields } = useFields();
 
   useEffect(() => {
     trackPageView('home');
-  }, []);
-
-  useEffect(() => {
-    const fetchFields = async () => {
-      try {
-        const response = await fetch('/api/fields');
-        const data = await response.json();
-        if (data.fields && data.fields.length > 0) {
-          setFields(data.fields);
-        }
-      } catch (error) {
-        console.error('Failed to fetch fields:', error);
-      } finally {
-        setIsLoadingFields(false);
-      }
-    };
-
-    fetchFields();
   }, []);
 
   return (
@@ -128,17 +111,17 @@ export default function Home() {
                     <div className="pt-4 border-t border-white/10">
                       <div className="text-xs text-white/40 font-mono mb-1">NOTRE TERRAIN</div>
                       <div className="text-3xl font-black text-white mb-2">
-                        {fields.length > 0 ? fields[1].name.toUpperCase() : 'PETIT CAMP'}
+                        {fields.length > 0 ? fields[0]?.name.toUpperCase() : FIELD_CONFIG.PETIT_CAMP_NAME.toUpperCase()}
                       </div>
                       <div className="text-sm text-white/60 mb-4">
-                        {fields.length > 0 ? fields[1].location : 'Thiés · Sénégal'}
+                        {fields.length > 0 ? fields[0]?.location : 'Thiés · Sénégal'}
                       </div>
                       
                       <div className="grid grid-cols-3 gap-3 mb-4">
                         <div className="bg-white/5 p-3 border border-white/10">
                           <div className="text-xs text-white/40 mb-1">Joueurs</div>
                           <div className="text-xl font-black text-white">
-                            {fields.length > 0 ? fields[1].capacity : 18}
+                            {fields.length > 0 ? fields[0]?.capacity : FIELD_CONFIG.DEFAULT_CAPACITY}
                           </div>
                         </div>
                         <div className="bg-white/5 p-3 border border-white/10">
@@ -148,28 +131,25 @@ export default function Home() {
                         <div className="bg-white/5 p-3 border border-white/10">
                           <div className="text-xs text-white/40 mb-1">Note</div>
                           <div className="text-lg font-black text-white">
-                            {fields.length > 0 ? fields[1].rating : 4.8}★
+                            {fields.length > 0 ? fields[0]?.rating : FIELD_CONFIG.DEFAULT_RATING}★
                           </div>
                         </div>
                       </div>
                       
-                      <div className="pt-4 border-t border-white/10 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="text-sm text-white/60 font-mono">Jour (8h-18h)</div>
-                          <div className="text-xl font-black text-emerald-400">
-                            {fields.length > 0 && fields[1]?.price_per_hour 
-                              ? fields[1].price_per_hour.toLocaleString() 
-                              : '20 000'} <span className="text-xs text-white/40 font-mono">FCFA/h</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="text-sm text-white/60 font-mono">Nuit (19h-2h)</div>
-                          <div className="text-xl font-black text-blue-400">
-                            {fields.length > 0 && fields[1]?.price_per_hour
-                              ? Math.round(fields[1].price_per_hour * 1.25).toLocaleString()
-                              : '25 000'} <span className="text-xs text-white/40 font-mono">FCFA/h</span>
-                          </div>
-                        </div>
+                      <div className="pt-4 border-t border-white/10">
+                        {fields.length > 0 && fields[0]?.price_per_hour ? (
+                          <PriceDisplay 
+                            pricePerHour={fields[0].price_per_hour}
+                            variant="detailed"
+                            showLabel={false}
+                          />
+                        ) : (
+                          <PriceDisplay 
+                            pricePerHour={PRICING.DEFAULT_DAY_RATE}
+                            variant="detailed"
+                            showLabel={false}
+                          />
+                        )}
                       </div>
                     </div>
                   </div>
@@ -456,13 +436,13 @@ export default function Home() {
                         <div>
                           <div className="text-xs text-white/40 font-mono mb-1">Jour (8h-18h)</div>
                           <div className="text-2xl font-black text-emerald-400">
-                            {field.price_per_hour?.toLocaleString() || '20 000'}
+                            {(field.price_per_hour || PRICING.DEFAULT_DAY_RATE).toLocaleString()} <span className="text-xs text-white/40 font-mono">FCFA/h</span>
                           </div>
                         </div>
                         <div>
                           <div className="text-xs text-white/40 font-mono mb-1">Nuit (19h-2h)</div>
                           <div className="text-2xl font-black text-blue-400">
-                            {Math.round((field.price_per_hour || 20000) * 1.25).toLocaleString()}
+                            {Math.round((field.price_per_hour || PRICING.DEFAULT_DAY_RATE) * PRICING.NIGHT_RATE_MULTIPLIER).toLocaleString()} <span className="text-xs text-white/40 font-mono">FCFA/h</span>
                           </div>
                         </div>
                       </div>

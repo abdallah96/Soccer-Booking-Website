@@ -4,6 +4,7 @@
  * Night rate (19h-2h): base price * 1.25 (25% more)
  * Duration options: 60 minutes (1h) or 90 minutes (1h30)
  */
+import { PRICING } from '@/lib/config/constants';
 
 /**
  * Calculate booking price based on start time, duration, and field's base price
@@ -13,14 +14,20 @@
  * @param basePricePerHour - Base price per hour from field (day rate)
  * @returns Total price in FCFA
  */
-export function calculateBookingPrice(startTime: string, durationMinutes: number, basePricePerHour: number = 20000): number {
-  const [hours, minutes] = startTime.split(':').map(Number);
+export function calculateBookingPrice(
+  startTime: string, 
+  durationMinutes: number, 
+  basePricePerHour: number = PRICING.DEFAULT_DAY_RATE
+): number {
+  const [hours] = startTime.split(':').map(Number);
   const hour = hours;
   
   // Determine if it's day rate (8h-18h) or night rate (19h-2h)
   // Note: 00:00 and 01:00 are considered night rate (next day)
-  const isDayRate = hour >= 8 && hour < 19;
-  const hourlyRate = isDayRate ? basePricePerHour : Math.round(basePricePerHour * 1.25);
+  const isDayRate = hour >= PRICING.DAY_HOURS_START && hour < PRICING.DAY_HOURS_END;
+  const hourlyRate = isDayRate 
+    ? basePricePerHour 
+    : Math.round(basePricePerHour * PRICING.NIGHT_RATE_MULTIPLIER);
   
   // Calculate total price
   const hoursDecimal = durationMinutes / 60;
@@ -37,10 +44,16 @@ export function formatPrice(price: number): string {
 /**
  * Get hourly rate based on time and field's base price
  */
-export function getHourlyRate(time: string, basePricePerHour: number = 20000): number {
+export function getHourlyRate(
+  time: string, 
+  basePricePerHour: number = PRICING.DEFAULT_DAY_RATE
+): number {
   const [hours] = time.split(':').map(Number);
   const hour = hours;
-  return (hour >= 8 && hour < 19) ? basePricePerHour : Math.round(basePricePerHour * 1.25);
+  const isDayRate = hour >= PRICING.DAY_HOURS_START && hour < PRICING.DAY_HOURS_END;
+  return isDayRate 
+    ? basePricePerHour 
+    : Math.round(basePricePerHour * PRICING.NIGHT_RATE_MULTIPLIER);
 }
 
 /**
@@ -48,6 +61,6 @@ export function getHourlyRate(time: string, basePricePerHour: number = 20000): n
  */
 export function isDayRate(time: string): boolean {
   const [hours] = time.split(':').map(Number);
-  return hours >= 8 && hours < 19;
+  return hours >= PRICING.DAY_HOURS_START && hours < PRICING.DAY_HOURS_END;
 }
 

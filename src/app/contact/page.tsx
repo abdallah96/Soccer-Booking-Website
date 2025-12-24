@@ -1,11 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useState, useEffect } from 'react';
 import { trackPageView, trackAction } from '@/lib/utils/analytics';
-import { useEffect } from 'react';
-
-const WHATSAPP_NUMBER = '+221789251834';
+import { CONTACT } from '@/lib/config/constants';
 
 export default function ContactPage() {
   const [message, setMessage] = useState('');
@@ -30,7 +27,7 @@ export default function ContactPage() {
     );
 
     // Open WhatsApp
-    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER.replace(/\s/g, '')}?text=${whatsappMessage}`;
+    const whatsappUrl = `https://wa.me/${CONTACT.WHATSAPP_NUMBER.replace(/\s/g, '')}?text=${whatsappMessage}`;
     window.open(whatsappUrl, '_blank');
     
     trackAction('button_clicked', 'whatsapp_contact', { has_name: !!name.trim() });
@@ -109,14 +106,14 @@ export default function ContactPage() {
         <div className="mt-12 text-center">
           <p className="text-white/60 mb-4 font-light">Ou contactez-nous directement :</p>
           <a
-            href={`https://wa.me/${WHATSAPP_NUMBER.replace(/\s/g, '')}`}
+            href={`https://wa.me/${CONTACT.WHATSAPP_NUMBER.replace(/\s/g, '')}`}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => trackAction('link_clicked', 'whatsapp_direct')}
             className="inline-flex items-center gap-3 px-6 py-4 bg-emerald-500 text-black font-black hover:bg-emerald-400 transition-colors"
           >
             <span>📱</span>
-            <span>{WHATSAPP_NUMBER}</span>
+            <span>{CONTACT.WHATSAPP_FORMATTED}</span>
           </a>
         </div>
       </div>
