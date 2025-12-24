@@ -7,7 +7,7 @@ import { Field } from '@/types';
 import { trackPageView, trackField } from '@/lib/utils/analytics';
 
 export default function FieldsPage() {
-  const [field, setField] = useState<Field | null>(null);
+  const [fields, setFields] = useState<Field[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -15,37 +15,38 @@ export default function FieldsPage() {
   }, []);
 
   useEffect(() => {
-    const fetchField = async () => {
+    const fetchFields = async () => {
       try {
         const response = await fetch('/api/fields');
         const data = await response.json();
-        // Get first field (Petit Camp)
         if (data.fields && data.fields.length > 0) {
-          const fetchedField = data.fields[0];
-          setField(fetchedField);
-          trackField('field_viewed', fetchedField.id);
+          setFields(data.fields);
+          // Track view for all fields
+          data.fields.forEach((field: Field) => {
+            trackField('field_viewed', field.id);
+          });
         }
       } catch (error) {
-        console.error('Failed to fetch field:', error);
+        console.error('Failed to fetch fields:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchField();
+    fetchFields();
   }, []);
 
   if (isLoading) {
-    return <LoadingSpinner message="Chargement du terrain..." />;
+    return <LoadingSpinner message="Chargement des terrains..." />;
   }
 
-  if (!field) {
+  if (fields.length === 0) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center px-6">
         <div className="text-center">
           <div className="text-8xl mb-6">⚽</div>
           <p className="text-white text-2xl md:text-3xl font-black mb-3">
-            Terrain non disponible
+            Aucun terrain disponible
           </p>
         </div>
       </div>
@@ -59,24 +60,27 @@ export default function FieldsPage() {
         <div className="absolute top-0 right-0 w-1/2 h-full bg-[radial-gradient(circle_at_100%_50%,rgba(59,130,246,0.1),transparent_70%)]"></div>
       </div>
       
-      <div className="relative z-10 max-w-4xl mx-auto text-white">
+      <div className="relative z-10 max-w-6xl mx-auto text-white">
         <div className="mb-12 md:mb-16 text-center">
           <div className="inline-block mb-6">
-            <span className="text-white/40 text-sm font-mono tracking-[0.3em] uppercase">NOTRE TERRAIN</span>
+            <span className="text-white/40 text-sm font-mono tracking-[0.3em] uppercase">NOS TERRAINS</span>
           </div>
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-tight mb-6">
-            PETIT <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400">CAMP</span>
+            CHOISISSEZ VOTRE <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400">TERRAIN</span>
           </h1>
           <p className="text-xl text-white/60 max-w-2xl mx-auto font-light">
-            Terrain professionnel avec installations modernes. Réservez votre créneau maintenant.
+            Terrains professionnels avec installations modernes. Réservez votre créneau maintenant.
           </p>
         </div>
 
-        <Link 
-          href={`/fields/${field.id}`} 
-          className="block group"
-          onClick={() => trackField('field_viewed', field.id, { source: 'fields_list' })}
-        >
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {fields.map((field) => (
+            <Link 
+              key={field.id}
+              href={`/fields/${field.id}`} 
+              className="block group"
+              onClick={() => trackField('field_viewed', field.id, { source: 'fields_list' })}
+            >
           <div className="relative">
             <div className="absolute -bottom-2 -right-2 w-full h-full border-2 border-emerald-500/30 group-hover:border-emerald-500/50 transition-colors"></div>
             <div className="relative bg-white/5 backdrop-blur-md border border-white/10 overflow-hidden group-hover:bg-white/10 transition-colors">
@@ -166,6 +170,8 @@ export default function FieldsPage() {
             </div>
           </div>
         </Link>
+          ))}
+        </div>
       </div>
     </div>
   );

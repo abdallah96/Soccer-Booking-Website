@@ -1,34 +1,38 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { PETIT_CAMP_FIELD } from '@/lib/utils/constants';
-// Get data to field page
+
+// Get all fields for users
 export async function GET() {
   try {
     const supabase = await createClient();
-    // Try to fetch from database first
+    
+    // Fetch ALL fields from database
     const { data: dbFields, error } = await supabase
       .from('fields')
       .select('*')
-      .eq('name', 'Petit Camp');
-    // If database has the field, use it; otherwise use constant
+      .order('created_at', { ascending: false });
+
+    // If database has fields, return them
     if (dbFields && dbFields.length > 0) {
-      // Ensure capacity is 18 (update if it's wrong)
-      const field = dbFields[0];
-      if (field.capacity !== 18) {
+      // Ensure Petit Camp has capacity 18 (update if wrong)
+      const petitCampField = dbFields.find(f => f.name === 'Petit Camp');
+      if (petitCampField && petitCampField.capacity !== 18) {
         await supabase
           .from('fields')
           .update({ capacity: 18 })
           .eq('name', 'Petit Camp');
-        field.capacity = 18;
+        petitCampField.capacity = 18;
       }
       
       return NextResponse.json({
-        fields: [{
+        fields: dbFields.map(field => ({
           ...field,
           images: field.images || [],
-        }]
+        }))
       });
     }
+    
     // Fallback to constant if database is empty
     return NextResponse.json({
       fields: [{
