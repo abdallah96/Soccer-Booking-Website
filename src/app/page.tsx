@@ -1,16 +1,37 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { trackPageView, trackAction } from '@/lib/utils/analytics';
+import { Field } from '@/types';
 
 export default function Home() {
   const { user } = useAuthStore();
+  const [fields, setFields] = useState<Field[]>([]);
+  const [isLoadingFields, setIsLoadingFields] = useState(true);
 
   useEffect(() => {
     trackPageView('home');
+  }, []);
+
+  useEffect(() => {
+    const fetchFields = async () => {
+      try {
+        const response = await fetch('/api/fields');
+        const data = await response.json();
+        if (data.fields && data.fields.length > 0) {
+          setFields(data.fields);
+        }
+      } catch (error) {
+        console.error('Failed to fetch fields:', error);
+      } finally {
+        setIsLoadingFields(false);
+      }
+    };
+
+    fetchFields();
   }, []);
 
   return (
@@ -101,18 +122,24 @@ export default function Home() {
                         <div className="text-xs text-white/40 font-mono mb-2">PROCHAIN MATCH</div>
                         <div className="text-2xl font-black text-white">CE SOIR 20:00</div>
                       </div>
-                      <div className="px-3 py-1 bg-emerald-500 text-black text-xs font-black">EN DIRECT</div>
+                      <div className="px-3 py-1 bg-emerald-500 text-black text-xs font-black">DISPONIBLE</div>
                     </div>
                     
                     <div className="pt-4 border-t border-white/10">
                       <div className="text-xs text-white/40 font-mono mb-1">NOTRE TERRAIN</div>
-                      <div className="text-3xl font-black text-white mb-2">PETIT CAMP</div>
-                      <div className="text-sm text-white/60 mb-4">Thiés · Sénégal</div>
+                      <div className="text-3xl font-black text-white mb-2">
+                        {fields.length > 0 ? fields[1].name.toUpperCase() : 'PETIT CAMP'}
+                      </div>
+                      <div className="text-sm text-white/60 mb-4">
+                        {fields.length > 0 ? fields[1].location : 'Thiés · Sénégal'}
+                      </div>
                       
                       <div className="grid grid-cols-3 gap-3 mb-4">
                         <div className="bg-white/5 p-3 border border-white/10">
                           <div className="text-xs text-white/40 mb-1">Joueurs</div>
-                          <div className="text-xl font-black text-white">18</div>
+                          <div className="text-xl font-black text-white">
+                            {fields.length > 0 ? fields[1].capacity : 18}
+                          </div>
                         </div>
                         <div className="bg-white/5 p-3 border border-white/10">
                           <div className="text-xs text-white/40 mb-1">Surface</div>
@@ -120,18 +147,28 @@ export default function Home() {
                         </div>
                         <div className="bg-white/5 p-3 border border-white/10">
                           <div className="text-xs text-white/40 mb-1">Note</div>
-                          <div className="text-lg font-black text-white">4.8★</div>
+                          <div className="text-lg font-black text-white">
+                            {fields.length > 0 ? fields[1].rating : 4.8}★
+                          </div>
                         </div>
                       </div>
                       
                       <div className="pt-4 border-t border-white/10 space-y-2">
                         <div className="flex items-center justify-between">
                           <div className="text-sm text-white/60 font-mono">Jour (8h-18h)</div>
-                          <div className="text-xl font-black text-emerald-400">20 000 <span className="text-xs text-white/40 font-mono">FCFA/h</span></div>
+                          <div className="text-xl font-black text-emerald-400">
+                            {fields.length > 0 && fields[1]?.price_per_hour 
+                              ? fields[1].price_per_hour.toLocaleString() 
+                              : '20 000'} <span className="text-xs text-white/40 font-mono">FCFA/h</span>
+                          </div>
                         </div>
                         <div className="flex items-center justify-between">
                           <div className="text-sm text-white/60 font-mono">Nuit (19h-2h)</div>
-                          <div className="text-xl font-black text-blue-400">25 000 <span className="text-xs text-white/40 font-mono">FCFA/h</span></div>
+                          <div className="text-xl font-black text-blue-400">
+                            {fields.length > 0 && fields[1]?.price_per_hour
+                              ? Math.round(fields[1].price_per_hour * 1.25).toLocaleString()
+                              : '25 000'} <span className="text-xs text-white/40 font-mono">FCFA/h</span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -352,13 +389,27 @@ export default function Home() {
         <div className="relative z-10 max-w-[1600px] mx-auto">
           <div className="mb-16">
             <div className="inline-block mb-6">
-              <span className="text-white/40 text-sm font-mono tracking-[0.3em] uppercase">NOTRE TERRAIN</span>
+              <span className="text-white/40 text-sm font-mono tracking-[0.3em] uppercase">
+                {fields.length > 1 ? 'NOS TERRAINS' : 'NOTRE TERRAIN'}
+              </span>
             </div>
             <h2 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-tight mb-6 text-white">
-              PETIT <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400">CAMP</span>
+              {fields.length > 1 ? (
+                <>
+                  NOS <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400">TERRAINS</span>
+                </>
+              ) : (
+                <>
+                  PETIT <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400">CAMP</span>
+                </>
+              )}
             </h2>
             <div className="flex items-center justify-between">
-              <p className="text-xl text-white/60 font-light">Terrain professionnel. Installations modernes. Disponible maintenant.</p>
+              <p className="text-xl text-white/60 font-light">
+                {fields.length > 1 
+                  ? 'Terrains professionnels. Installations modernes. Disponibles maintenant.'
+                  : 'Terrain professionnel. Installations modernes. Disponible maintenant.'}
+              </p>
               <Link 
                 href="/fields" 
                 className="text-white/80 hover:text-white font-bold text-sm font-mono tracking-wider border-b-2 border-white/30 hover:border-white transition-colors"
@@ -369,33 +420,62 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-1 gap-6 max-w-2xl mx-auto">
-            <Link href="/fields/petit-camp-1" className="group cursor-pointer">
-              <div className="relative mb-4">
-                <div className="absolute -bottom-2 -right-2 w-full h-full border-2 border-emerald-500/30 group-hover:border-emerald-500/50 transition-colors"></div>
-                <div className="relative bg-white/5 backdrop-blur-md border border-white/10 p-8 min-h-[300px] flex flex-col justify-between group-hover:bg-white/10 transition-colors">
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="text-xs text-white/40 font-mono uppercase">Thiés</span>
-                      <span className="text-sm font-black text-emerald-400">4.8★</span>
+          {isLoadingFields ? (
+            <div className="text-center py-12">
+              <p className="text-white/60">Chargement des terrains...</p>
+            </div>
+          ) : fields.length > 0 ? (
+            <div className={`grid ${fields.length === 1 ? 'md:grid-cols-1' : 'md:grid-cols-2 lg:grid-cols-3'} gap-6 ${fields.length === 1 ? 'max-w-2xl mx-auto' : ''}`}>
+              {fields.map((field) => (
+                <Link 
+                  key={field.id}
+                  href={`/fields/${field.id}`} 
+                  className="group cursor-pointer"
+                  onClick={() => trackAction('link_clicked', 'field_homepage', { field_id: field.id })}
+                >
+                  <div className="relative mb-4">
+                    <div className="absolute -bottom-2 -right-2 w-full h-full border-2 border-emerald-500/30 group-hover:border-emerald-500/50 transition-colors"></div>
+                    <div className="relative bg-white/5 backdrop-blur-md border border-white/10 p-8 min-h-[300px] flex flex-col justify-between group-hover:bg-white/10 transition-colors">
+                      <div>
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="text-xs text-white/40 font-mono uppercase">{field.location}</span>
+                          <span className="text-sm font-black text-emerald-400">{field.rating}★</span>
+                        </div>
+                        <h3 className="text-4xl font-black text-white mb-3">{field.name.toUpperCase()}</h3>
+                        <p className="text-sm text-white/60 mb-6 font-light line-clamp-2">
+                          {field.description || 'Terrain professionnel avec installations modernes'}
+                        </p>
+                        {field.facilities && field.facilities.length > 0 && (
+                          <p className="text-xs text-white/50 mb-4 font-light">
+                            {field.facilities.slice(0, 4).join(' · ')}
+                            {field.facilities.length > 4 && ' · ...'}
+                          </p>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
+                        <div>
+                          <div className="text-xs text-white/40 font-mono mb-1">Jour (8h-18h)</div>
+                          <div className="text-2xl font-black text-emerald-400">
+                            {field.price_per_hour?.toLocaleString() || '20 000'}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-white/40 font-mono mb-1">Nuit (19h-2h)</div>
+                          <div className="text-2xl font-black text-blue-400">
+                            {Math.round((field.price_per_hour || 20000) * 1.25).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <h3 className="text-4xl font-black text-white mb-3">PETIT CAMP</h3>
-                    <p className="text-sm text-white/60 mb-6 font-light">Terrain synthétique · Éclairage · Vestiaires · Parking</p>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10">
-                    <div>
-                      <div className="text-xs text-white/40 font-mono mb-1">Jour (8h-18h)</div>
-                      <div className="text-2xl font-black text-emerald-400">20 000</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-white/40 font-mono mb-1">Nuit (19h-2h)</div>
-                      <div className="text-2xl font-black text-blue-400">25 000</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Link>
-          </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-white/60">Aucun terrain disponible pour le moment</p>
+            </div>
+          )}
         </div>
       </section>
 

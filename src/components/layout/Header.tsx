@@ -101,6 +101,12 @@ export const Header = () => {
                   RÉSERVATIONS
                 </Link>
                 <Link 
+                  href="/contact" 
+                  className="text-black hover:text-emerald-500 font-bold text-sm tracking-tight transition-colors"
+                >
+                  CONTACT
+                </Link>
+                <Link 
                   href="/profile" 
                   className="flex items-center gap-2 text-black hover:text-emerald-500 font-bold text-sm tracking-tight transition-colors"
                 >
@@ -129,6 +135,12 @@ export const Header = () => {
                   className="text-black hover:text-emerald-500 font-bold text-sm tracking-tight transition-colors"
                 >
                   TERRAINS
+                </Link>
+                <Link 
+                  href="/contact" 
+                  className="text-black hover:text-emerald-500 font-bold text-sm tracking-tight transition-colors"
+                >
+                  CONTACT
                 </Link>
                 <Link 
                   href="/auth/login" 
@@ -216,6 +228,13 @@ export const Header = () => {
                   RÉSERVATIONS
                 </Link>
                 <Link 
+                  href="/contact" 
+                  className="block py-3 text-black font-bold text-sm tracking-tight hover:text-emerald-500 transition-colors"
+                  onClick={() => setShowMenu(false)}
+                >
+                  CONTACT
+                </Link>
+                <Link 
                   href="/profile" 
                   className="block py-3 text-black font-bold text-sm tracking-tight hover:text-emerald-500 transition-colors flex items-center gap-3"
                   onClick={() => setShowMenu(false)}
@@ -250,6 +269,13 @@ export const Header = () => {
                   onClick={() => setShowMenu(false)}
                 >
                   TERRAINS
+                </Link>
+                <Link 
+                  href="/contact" 
+                  className="block py-3 text-black font-bold text-sm tracking-tight hover:text-emerald-500 transition-colors"
+                  onClick={() => setShowMenu(false)}
+                >
+                  CONTACT
                 </Link>
                 <Link 
                   href="/auth/login" 

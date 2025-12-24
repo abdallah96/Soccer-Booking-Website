@@ -135,8 +135,8 @@ export default function FieldDetailPage() {
   };
 
   // Calculate price dynamically
-  const calculatedPrice = selectedStartTime 
-    ? calculateBookingPrice(selectedStartTime, selectedDuration)
+  const calculatedPrice = selectedStartTime && field
+    ? calculateBookingPrice(selectedStartTime, selectedDuration, field.price_per_hour || 20000)
     : 0;
 
   const today = new Date();
@@ -242,12 +242,41 @@ export default function FieldDetailPage() {
                   <div>
                     <div className="text-sm text-white/40 font-mono uppercase mb-2">Tarifs</div>
                     <div className="space-y-1">
-                      <div className="text-xl font-black text-emerald-400">20 000 FCFA</div>
+                      <div className="text-xl font-black text-emerald-400">
+                        {(field.price_per_hour || 20000).toLocaleString()} FCFA
+                      </div>
                       <div className="text-xs text-white/60 font-mono">Jour (8h-18h)</div>
-                      <div className="text-xl font-black text-blue-400">25 000 FCFA</div>
+                      <div className="text-xl font-black text-blue-400">
+                        {Math.round((field.price_per_hour || 20000) * 1.25).toLocaleString()} FCFA
+                      </div>
                       <div className="text-xs text-white/60 font-mono">Nuit (19h-2h)</div>
                     </div>
                   </div>
+                </div>
+
+                <div className="pt-6 border-t border-white/10">
+                  <h2 className="text-2xl font-black text-white mb-4 uppercase">Localisation</h2>
+                  <div className="relative w-full h-64 rounded-lg overflow-hidden border-2 border-white/10">
+                    <iframe
+                      src={`https://www.google.com/maps?q=${encodeURIComponent(field.location)}&output=embed`}
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      allowFullScreen
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      className="absolute inset-0"
+                    />
+                  </div>
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(field.location)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-flex items-center gap-2 text-emerald-400 hover:text-emerald-300 text-sm font-light"
+                  >
+                    <span>📍</span>
+                    <span>Voir sur Google Maps</span>
+                  </a>
                 </div>
               </div>
             </div>
@@ -373,13 +402,16 @@ export default function FieldDetailPage() {
 
                     <div className="pt-6 border-t border-white/10">
                       <div className="space-y-3 mb-6">
-                        {selectedStartTime && (
+                        {selectedStartTime && field && (
                           <div className="flex items-center justify-between text-sm">
                             <span className="text-white/60 font-light">
                               {isDayRate(selectedStartTime) ? 'Tarif jour' : 'Tarif nuit'}
                             </span>
                             <span className="text-white font-mono">
-                              {isDayRate(selectedStartTime) ? '20 000' : '25 000'} FCFA/h
+                              {isDayRate(selectedStartTime) 
+                                ? (field.price_per_hour || 20000).toLocaleString()
+                                : Math.round((field.price_per_hour || 20000) * 1.25).toLocaleString()
+                              } FCFA/h
                             </span>
                           </div>
                         )}

@@ -494,7 +494,7 @@ export default function AdminPage() {
 
                   <div className="grid md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm text-white/60 mb-2">Prix par heure (FCFA) *</label>
+                      <label className="block text-sm text-white/60 mb-2">Prix jour (8h-18h) FCFA/h *</label>
                       <input
                         type="number"
                         value={fieldData.price_per_hour}
@@ -503,6 +503,9 @@ export default function AdminPage() {
                         min="0"
                         className="w-full px-4 py-3 bg-black/50 border-2 border-white/20 text-white focus:outline-none focus:border-emerald-500"
                       />
+                      <p className="text-xs text-white/40 mt-1">
+                        Prix nuit (19h-2h): {fieldData.price_per_hour ? Math.round(Number(fieldData.price_per_hour) * 1.25).toLocaleString() : '---'} FCFA/h (automatique)
+                      </p>
                     </div>
                     <div>
                       <label className="block text-sm text-white/60 mb-2">Capacité (joueurs) *</label>

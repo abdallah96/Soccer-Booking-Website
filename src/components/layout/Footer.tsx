@@ -34,25 +34,31 @@ export const Footer = () => {
             </p>
             <div className="flex space-x-3 pt-2">
               <a 
-                href="#" 
+                href="https://www.facebook.com" 
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-10 h-10 border border-white/20 hover:border-white/40 flex items-center justify-center transition-colors group"
                 aria-label="Facebook"
               >
                 <span className="text-sm group-hover:scale-110 transition-transform">📘</span>
               </a>
               <a 
-                href="#" 
-                className="w-10 h-10 border border-white/20 hover:border-white/40 flex items-center justify-center transition-colors group"
-                aria-label="Twitter"
-              >
-                <span className="text-sm group-hover:scale-110 transition-transform">🐦</span>
-              </a>
-              <a 
-                href="#" 
+                href="https://www.instagram.com" 
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-10 h-10 border border-white/20 hover:border-white/40 flex items-center justify-center transition-colors group"
                 aria-label="Instagram"
               >
                 <span className="text-sm group-hover:scale-110 transition-transform">📷</span>
+              </a>
+              <a 
+                href="https://wa.me/221789251834" 
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 border border-emerald-500/30 hover:border-emerald-500/50 bg-emerald-500/10 flex items-center justify-center transition-colors group"
+                aria-label="WhatsApp"
+              >
+                <span className="text-sm group-hover:scale-110 transition-transform">📱</span>
               </a>
             </div>
           </div>
@@ -87,24 +93,24 @@ export const Footer = () => {
             <h4 className="text-white font-black mb-6 text-sm tracking-tight uppercase">Support</h4>
             <ul className="space-y-3">
               <li>
-                <a href="#" className="text-white/60 hover:text-white transition-colors font-light text-sm">
+                <Link href="/contact" className="text-white/60 hover:text-white transition-colors font-light text-sm">
                   Nous Contacter
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-white/60 hover:text-white transition-colors font-light text-sm">
+                <Link href="/faq" className="text-white/60 hover:text-white transition-colors font-light text-sm">
                   FAQ
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-white/60 hover:text-white transition-colors font-light text-sm">
+                <Link href="/conditions-generales" className="text-white/60 hover:text-white transition-colors font-light text-sm">
                   Conditions Générales
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-white/60 hover:text-white transition-colors font-light text-sm">
+                <Link href="/politique-de-confidentialite" className="text-white/60 hover:text-white transition-colors font-light text-sm">
                   Politique de Confidentialité
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -118,8 +124,9 @@ export const Footer = () => {
                 </a>
               </li>
               <li className="text-white/60">
-                <a href="tel:+221XXXXXXXXX" className="hover:text-white transition-colors">
-                  +221 XXXXXXXXX
+                <a href="https://wa.me/221789251834" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors flex items-center gap-2">
+                  <span>📱</span>
+                  <span>+221 78 925 18 34</span>
                 </a>
               </li>
               <li className="text-white/60">

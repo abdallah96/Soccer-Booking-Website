@@ -33,20 +33,22 @@ export async function POST(request: Request) {
 
     const supabase = await createClient();
 
-    // Check if field exists
+    // Check if field exists and get price
     const { data: field, error: fieldError } = await supabase
       .from('fields')
-      .select('id, name')
+      .select('id, name, price_per_hour')
       .eq('id', field_id)
       .single();
+
+    const basePricePerHour = field?.price_per_hour || 20000;
 
     if (fieldError || !field) {
       // If field not in DB, allow booking with field_id (for Petit Camp)
       console.log('Field not found in DB, proceeding with provided field_id');
     }
 
-    // Calculate price
-    const amount = calculateBookingPrice(start_time, duration);
+    // Calculate price using field's base price
+    const amount = calculateBookingPrice(start_time, duration, basePricePerHour);
 
     // Calculate end time
     const [hours, minutes] = start_time.split(':').map(Number);
