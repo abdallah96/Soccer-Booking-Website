@@ -69,7 +69,7 @@ export default function Home() {
                     onClick={() => trackAction('link_clicked', 'register_home')}
                   >
                     <button className="px-10 py-5 border-2 border-white/30 text-white font-bold text-lg tracking-tight hover:border-white/50 hover:bg-white/5 transition-all backdrop-blur-sm">
-                      REJOINDRE GRATUITEMENT
+                      CRÉER UN COMPTE
                     </button>
                   </Link>
                 )}
@@ -112,7 +112,7 @@ export default function Home() {
                       <div className="grid grid-cols-3 gap-3 mb-4">
                         <div className="bg-white/5 p-3 border border-white/10">
                           <div className="text-xs text-white/40 mb-1">Joueurs</div>
-                          <div className="text-xl font-black text-white">22</div>
+                          <div className="text-xl font-black text-white">18</div>
                         </div>
                         <div className="bg-white/5 p-3 border border-white/10">
                           <div className="text-xs text-white/40 mb-1">Surface</div>
@@ -127,13 +127,12 @@ export default function Home() {
                       <div className="pt-4 border-t border-white/10 space-y-2">
                         <div className="flex items-center justify-between">
                           <div className="text-sm text-white/60 font-mono">Jour (8h-18h)</div>
-                          <div className="text-xl font-black text-emerald-400">20 000</div>
+                          <div className="text-xl font-black text-emerald-400">20 000 <span className="text-xs text-white/40 font-mono">FCFA/h</span></div>
                         </div>
                         <div className="flex items-center justify-between">
                           <div className="text-sm text-white/60 font-mono">Nuit (19h-2h)</div>
-                          <div className="text-xl font-black text-blue-400">25 000</div>
+                          <div className="text-xl font-black text-blue-400">25 000 <span className="text-xs text-white/40 font-mono">FCFA/h</span></div>
                         </div>
-                        <div className="text-xs text-white/40 font-mono pt-2">FCFA / heure</div>
                       </div>
                     </div>
                   </div>
@@ -200,12 +199,12 @@ export default function Home() {
                   <div className="lg:order-1 relative group">
                     <div className="relative z-10">
                       {/* Step number badge */}
-                      <div className="absolute -top-6 -left-6 w-20 h-20 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center shadow-2xl shadow-emerald-500/30 transform group-hover:scale-110 transition-transform duration-300">
+                      <div className="absolute -top-6 -left-6 w-20 h-20 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center shadow-2xl shadow-emerald-500/30 transform group-hover:scale-110 transition-transform duration-300 z-30">
                         <span className="text-3xl font-black text-white">01</span>
                       </div>
                       
                       {/* Content card */}
-                      <div className="relative bg-gradient-to-br from-black via-black to-gray-900 text-white p-10 md:p-12 rounded-3xl shadow-2xl transform group-hover:-translate-y-2 transition-all duration-300">
+                      <div className="relative bg-gradient-to-br from-black via-black to-gray-900 text-white p-10 md:p-12 rounded-3xl shadow-2xl transform group-hover:-translate-y-2 transition-all duration-300 z-20">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl"></div>
                         <div className="relative z-10">
                           <h3 className="text-3xl md:text-4xl font-black mb-6 leading-tight">CHOISISSEZ PETIT CAMP</h3>
@@ -263,12 +262,12 @@ export default function Home() {
                   <div className="lg:order-2 relative group">
                     <div className="relative z-10">
                       {/* Step number badge */}
-                      <div className="absolute -top-6 -right-6 w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-2xl shadow-blue-500/30 transform group-hover:scale-110 transition-transform duration-300 z-20">
+                      <div className="absolute -top-6 -right-6 w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-2xl shadow-blue-500/30 transform group-hover:scale-110 transition-transform duration-300 z-30">
                         <span className="text-3xl font-black text-white">02</span>
                       </div>
                       
                       {/* Content card */}
-                      <div className="relative bg-gray-800 border-2 border-gray-700 text-white p-10 md:p-12 rounded-3xl shadow-2xl transform group-hover:-translate-y-2 transition-all duration-300">
+                      <div className="relative bg-gray-800 border-2 border-gray-700 text-white p-10 md:p-12 rounded-3xl shadow-2xl transform group-hover:-translate-y-2 transition-all duration-300 z-20">
                         <div className="absolute top-0 left-0 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl"></div>
                         <div className="relative z-10">
                           <h3 className="text-3xl md:text-4xl font-black mb-6 leading-tight">RÉSERVEZ VOTRE CRÉNEAU</h3>
@@ -298,12 +297,12 @@ export default function Home() {
                   <div className="lg:order-1 relative group">
                     <div className="relative z-10">
                       {/* Step number badge */}
-                      <div className="absolute -top-6 -left-6 w-20 h-20 bg-gradient-to-br from-emerald-500 via-blue-500 to-emerald-500 rounded-full flex items-center justify-center shadow-2xl shadow-emerald-500/30 transform group-hover:scale-110 transition-transform duration-300">
+                      <div className="absolute -top-6 -left-6 w-20 h-20 bg-gradient-to-br from-emerald-500 via-blue-500 to-emerald-500 rounded-full flex items-center justify-center shadow-2xl shadow-emerald-500/30 transform group-hover:scale-110 transition-transform duration-300 z-30">
                         <span className="text-3xl font-black text-white">03</span>
                       </div>
                       
                       {/* Content card */}
-                      <div className="relative bg-gradient-to-br from-emerald-500 via-blue-500 to-emerald-500 text-white p-10 md:p-12 rounded-3xl shadow-2xl transform group-hover:-translate-y-2 transition-all duration-300 overflow-hidden">
+                      <div className="relative bg-gradient-to-br from-emerald-500 via-blue-500 to-emerald-500 text-white p-10 md:p-12 rounded-3xl shadow-2xl transform group-hover:-translate-y-2 transition-all duration-300 overflow-hidden z-20">
                         <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
                         <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
                         <div className="relative z-10">
@@ -429,12 +428,10 @@ export default function Home() {
             <div className="relative">
               <div className="absolute inset-0 bg-black blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
               <button className="relative px-12 py-6 bg-black text-white font-black text-xl tracking-tight hover:bg-black/90 transition-colors transform group-hover:scale-105">
-                {user ? 'PARCOURIR LES TERRAINS' : 'COMMENCER GRATUITEMENT'}
+                {user ? 'PARCOURIR LES TERRAINS' : 'CRÉER UN COMPTE'}
               </button>
             </div>
           </Link>
-          
-          <p className="mt-8 text-sm text-white/70 font-mono">Aucune carte bancaire · Gratuit à vie</p>
         </div>
       </section>
     </div>

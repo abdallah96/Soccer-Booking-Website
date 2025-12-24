@@ -160,7 +160,7 @@ BEGIN
       'Terrain de football professionnel avec installations modernes. Éclairage de qualité, vestiaires équipés, parking sécurisé et rafraîchissements disponibles.',
       'Dakar, Sénégal',
       20000,
-      22,
+      18,
       4.8,
       ARRAY['Éclairage', 'Vestiaires', 'Parking', 'Rafraîchissements']
     );
@@ -171,7 +171,7 @@ BEGIN
       description = 'Terrain de football professionnel avec installations modernes. Éclairage de qualité, vestiaires équipés, parking sécurisé et rafraîchissements disponibles.',
       location = 'Dakar, Sénégal',
       price_per_hour = 20000,
-      capacity = 22,
+      capacity = 18,
       rating = 4.8,
       facilities = ARRAY['Éclairage', 'Vestiaires', 'Parking', 'Rafraîchissements'],
       updated_at = CURRENT_TIMESTAMP

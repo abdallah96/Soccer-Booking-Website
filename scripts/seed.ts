@@ -60,7 +60,7 @@ async function seed() {
         description: 'Professional-grade football field with modern facilities',
         location: 'Downtown Sports Complex, Thiés',
         price_per_hour: 15000,
-        capacity: 22,
+        capacity: 18,
         rating: 4.8,
         images: [
           'https://images.unsplash.com/photo-1459865264687-595d652de67e?w=800',

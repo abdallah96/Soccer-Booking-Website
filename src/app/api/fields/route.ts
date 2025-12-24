@@ -12,11 +12,21 @@ export async function GET() {
       .eq('name', 'Petit Camp');
     // If database has the field, use it; otherwise use constant
     if (dbFields && dbFields.length > 0) {
+      // Ensure capacity is 18 (update if it's wrong)
+      const field = dbFields[0];
+      if (field.capacity !== 18) {
+        await supabase
+          .from('fields')
+          .update({ capacity: 18 })
+          .eq('name', 'Petit Camp');
+        field.capacity = 18;
+      }
+      
       return NextResponse.json({
-        fields: dbFields.map(field => ({
+        fields: [{
           ...field,
           images: field.images || [],
-        }))
+        }]
       });
     }
     // Fallback to constant if database is empty

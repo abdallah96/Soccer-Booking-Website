@@ -18,6 +18,15 @@ export async function GET(
       .single();
 
     if (dbField) {
+      // Ensure capacity is 18 (update if it's wrong)
+      if (dbField.capacity !== 18 && (dbField.name === 'Petit Camp' || dbField.id === 'petit-camp-1')) {
+        await supabase
+          .from('fields')
+          .update({ capacity: 18 })
+          .eq('id', id);
+        dbField.capacity = 18;
+      }
+      
       return NextResponse.json({
         field: {
           ...dbField,

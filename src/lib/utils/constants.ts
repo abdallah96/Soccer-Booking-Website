@@ -34,7 +34,7 @@ export const PETIT_CAMP_FIELD = {
   description: 'Terrain de football professionnel avec installations modernes. Éclairage de qualité, vestiaires équipés, parking sécurisé et rafraîchissements disponibles.',
   location: 'Thiés, Sénégal',
   price_per_hour: 20000, // Base price, actual price calculated dynamically based on time
-  capacity: 22,
+  capacity: 18,
   facilities: ['Éclairage', 'Vestiaires', 'Parking', 'Rafraîchissements'],
   rating: 4.8,
   images: [],

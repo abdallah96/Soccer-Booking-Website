@@ -29,7 +29,7 @@ async function seed() {
       description: 'Terrain de football professionnel avec installations modernes. Éclairage de qualité, vestiaires équipés, parking sécurisé et rafraîchissements disponibles.',
       location: 'Thiés, Sénégal',
       price_per_hour: 20000,
-      capacity: 22,
+      capacity: 18,
       rating: 4.8,
       facilities: ['Éclairage', 'Vestiaires', 'Parking', 'Rafraîchissements'],
       images: [],
