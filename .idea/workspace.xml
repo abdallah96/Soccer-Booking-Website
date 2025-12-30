@@ -4,14 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b068d549-a129-4aa5-ae17-b015f43b4c96" name="Changes" comment="Update Site, for single football camp booking" />
+    <list default="true" id="b068d549-a129-4aa5-ae17-b015f43b4c96" name="Changes" comment="Update Site, for single football camp booking">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="70" />
+    <option name="cachedIndexableFilesCount" value="86" />
     <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
   </component>
   <component name="FileTemplateManagerImpl">
@@ -108,6 +110,7 @@
       <workItem from="1766407803640" duration="4894000" />
       <workItem from="1766413967339" duration="24372000" />
       <workItem from="1766575474537" duration="4615000" />
+      <workItem from="1766699702158" duration="2802000" />
     </task>
     <task id="LOCAL-00001" summary="Update Site, for single football camp booking">
       <option name="closed" value="true" />

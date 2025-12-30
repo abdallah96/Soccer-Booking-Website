@@ -35,6 +35,7 @@ export default function AdminPage() {
   const [updatingBooking, setUpdatingBooking] = useState<string | null>(null);
   const [savingField, setSavingField] = useState(false);
   const [deletingField, setDeletingField] = useState<string | null>(null);
+  const [stats, setStats] = useState<any>(null);
 
   useEffect(() => {
     if (!user) {
@@ -51,6 +52,7 @@ export default function AdminPage() {
     setIsLoading(false);
     fetchBookings();
     fetchFields();
+    fetchStats();
   }, [user, router]);
 
   const fetchBookings = async () => {
@@ -74,6 +76,18 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error('Failed to fetch fields:', error);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const response = await fetch('/api/admin/stats');
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
     }
   };
 
@@ -155,6 +169,7 @@ export default function AdminPage() {
       if (response.ok) {
         toast.success(status === 'confirmed' ? 'Réservation confirmée' : 'Réservation annulée');
         fetchBookings();
+        fetchStats();
       } else {
         toast.error(result.error || 'Erreur lors de la mise à jour');
       }
@@ -199,6 +214,7 @@ export default function AdminPage() {
         setEditingField(null);
         resetFieldForm();
         fetchFields();
+        fetchStats();
       } else {
         toast.error(result.error || 'Erreur lors de la sauvegarde');
       }
@@ -239,6 +255,7 @@ export default function AdminPage() {
       if (response.ok) {
         toast.success('Terrain supprimé avec succès');
         fetchFields();
+        fetchStats();
       } else {
         toast.error(result.error || 'Erreur lors de la suppression');
       }
@@ -334,11 +351,91 @@ export default function AdminPage() {
           </button>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl">
-            <div className="text-3xl font-black text-emerald-400 mb-2">{bookings.length}</div>
-            <div className="text-sm text-white/60 font-light">Total Réservations</div>
+        {/* Statistics Cards */}
+        {stats && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl">
+              <div className="text-3xl font-black text-emerald-400 mb-2">
+                {stats.stats?.total_bookings || 0}
+              </div>
+              <div className="text-sm text-white/60 font-light">Total Réservations</div>
+            </div>
+            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl">
+              <div className="text-3xl font-black text-yellow-400 mb-2">
+                {stats.stats?.pending_bookings || 0}
+              </div>
+              <div className="text-sm text-white/60 font-light">En Attente</div>
+            </div>
+            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl">
+              <div className="text-3xl font-black text-emerald-400 mb-2">
+                {stats.stats?.confirmed_bookings || 0}
+              </div>
+              <div className="text-sm text-white/60 font-light">Confirmées</div>
+            </div>
+            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl">
+              <div className="text-2xl font-black text-emerald-400 mb-2">
+                {new Intl.NumberFormat('fr-FR', {
+                  style: 'currency',
+                  currency: 'XOF',
+                  minimumFractionDigits: 0,
+                }).format(stats.stats?.total_revenue || 0)}
+              </div>
+              <div className="text-sm text-white/60 font-light">Revenus Total</div>
+            </div>
           </div>
+        )}
+
+        {/* Additional Stats Row */}
+        {stats && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl">
+              <div className="text-2xl font-black text-emerald-400 mb-2">
+                {new Intl.NumberFormat('fr-FR', {
+                  style: 'currency',
+                  currency: 'XOF',
+                  minimumFractionDigits: 0,
+                }).format(stats.stats?.revenue_last_30_days || 0)}
+              </div>
+              <div className="text-sm text-white/60 font-light">Revenus (30 derniers jours)</div>
+            </div>
+            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl">
+              <div className="text-3xl font-black text-emerald-400 mb-2">
+                {stats.stats?.total_fields || 0}
+              </div>
+              <div className="text-sm text-white/60 font-light">Terrains Disponibles</div>
+            </div>
+            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl">
+              <div className="text-3xl font-black text-red-400 mb-2">
+                {stats.stats?.cancelled_bookings || 0}
+              </div>
+              <div className="text-sm text-white/60 font-light">Annulées</div>
+            </div>
+          </div>
+        )}
+
+        {/* Popular Fields */}
+        {stats?.popular_fields && stats.popular_fields.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-2xl font-black text-white mb-4">Terrains Populaires</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {stats.popular_fields.map((field: any, index: number) => (
+                <div
+                  key={field.field_id}
+                  className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-2xl font-black text-emerald-400">#{index + 1}</span>
+                    <span className="text-xl font-black text-white">{field.bookings_count}</span>
+                  </div>
+                  <div className="text-white font-semibold">{field.name}</div>
+                  <div className="text-sm text-white/60 font-light mt-1">réservations</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
           <button
             onClick={() => setShowPasswordForm(!showPasswordForm)}
             className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl hover:bg-white/10 transition-colors text-left"
