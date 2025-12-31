@@ -65,6 +65,12 @@ export default function ProfilePage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Only allow submission when in editing mode
+    if (!isEditing) {
+      return;
+    }
+    
     if (!user?.id) return;
 
     setIsLoading(true);
@@ -150,7 +156,12 @@ export default function ProfilePage() {
         </div>
 
         <div className="relative bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-8">
-          <form onSubmit={handleSave}>
+          <form onSubmit={handleSave} onKeyDown={(e) => {
+            // Prevent form submission when pressing Enter if not in editing mode
+            if (!isEditing && e.key === 'Enter') {
+              e.preventDefault();
+            }
+          }}>
             <div className="space-y-6">
               <div>
                 <label className="block text-white/60 text-sm font-light mb-2">
@@ -240,7 +251,11 @@ export default function ProfilePage() {
                 ) : (
                   <button
                     type="button"
-                    onClick={() => setIsEditing(true)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsEditing(true);
+                    }}
                     className="flex-1 px-6 py-3 bg-emerald-500 text-black font-black rounded-lg hover:bg-emerald-400 transition-colors"
                   >
                     Modifier le profil
