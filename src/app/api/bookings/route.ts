@@ -1,15 +1,20 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { calculateBookingPrice } from '@/lib/utils/pricing';
 import { trackEventServer } from '@/lib/utils/analytics-server';
 import { PRICING } from '@/lib/config/constants';
+import { requireAuth, AuthenticatedRequest } from '@/lib/middleware/auth';
+import { sanitizeUUID, sanitizeDate, sanitizeTime, sanitizeNumber } from '@/lib/utils/sanitize';
 
-export async function POST(request: Request) {
+async function handlePost(request: AuthenticatedRequest) {
   try {
     const body = await request.json();
-    const { field_id, date, start_time, duration, payment_method, user_id } = body;
+    const { field_id, date, start_time, duration, payment_method } = body;
 
-    // Validation
+    // Get user_id from authenticated user (secure)
+    const user_id = request.user!.userId;
+
+    // Validation and sanitization
     if (!field_id || !date || !start_time || !duration || !payment_method) {
       return NextResponse.json(
         { error: 'Tous les champs sont requis' },
@@ -17,17 +22,41 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!user_id) {
+    const sanitizedFieldId = sanitizeUUID(field_id);
+    if (!sanitizedFieldId) {
       return NextResponse.json(
-        { error: 'Vous devez être connecté pour réserver' },
-        { status: 401 }
+        { error: 'ID de terrain invalide' },
+        { status: 400 }
       );
     }
 
-    // Validate duration (60 or 90 minutes)
-    if (duration !== 60 && duration !== 90) {
+    const sanitizedDate = sanitizeDate(date);
+    if (!sanitizedDate) {
+      return NextResponse.json(
+        { error: 'Date invalide' },
+        { status: 400 }
+      );
+    }
+
+    const sanitizedTime = sanitizeTime(start_time);
+    if (!sanitizedTime) {
+      return NextResponse.json(
+        { error: 'Heure invalide' },
+        { status: 400 }
+      );
+    }
+
+    const sanitizedDuration = sanitizeNumber(duration, 60, 90);
+    if (!sanitizedDuration || (sanitizedDuration !== 60 && sanitizedDuration !== 90)) {
       return NextResponse.json(
         { error: 'Durée invalide. Choisissez 1h ou 1h30' },
+        { status: 400 }
+      );
+    }
+
+    if (!['wave', 'orange_money', 'cash'].includes(payment_method)) {
+      return NextResponse.json(
+        { error: 'Méthode de paiement invalide' },
         { status: 400 }
       );
     }
@@ -38,7 +67,7 @@ export async function POST(request: Request) {
     const { data: field, error: fieldError } = await supabase
       .from('fields')
       .select('id, name, price_per_hour')
-      .eq('id', field_id)
+      .eq('id', sanitizedFieldId)
       .single();
 
     const basePricePerHour = field?.price_per_hour || PRICING.DEFAULT_DAY_RATE;
@@ -49,21 +78,21 @@ export async function POST(request: Request) {
     }
 
     // Calculate price using field's base price
-    const amount = calculateBookingPrice(start_time, duration, basePricePerHour);
+    const amount = calculateBookingPrice(sanitizedTime, sanitizedDuration, basePricePerHour);
 
     // Calculate end time
-    const [hours, minutes] = start_time.split(':').map(Number);
-    const startDate = new Date(`2000-01-01T${start_time}:00`);
-    const endDate = new Date(startDate.getTime() + duration * 60000);
+    const [hours, minutes] = sanitizedTime.split(':').map(Number);
+    const startDate = new Date(`2000-01-01T${sanitizedTime}:00`);
+    const endDate = new Date(startDate.getTime() + sanitizedDuration * 60000);
     const end_time = `${String(endDate.getHours()).padStart(2, '0')}:${String(endDate.getMinutes()).padStart(2, '0')}`;
-    const time_slot = `${start_time} - ${end_time}`;
+    const time_slot = `${sanitizedTime} - ${end_time}`;
 
     // Check if time slot is already booked
     const { data: existingBooking, error: checkError } = await supabase
       .from('bookings')
       .select('id')
-      .eq('field_id', field_id)
-      .eq('date', date)
+      .eq('field_id', sanitizedFieldId)
+      .eq('date', sanitizedDate)
       .eq('time_slot', time_slot)
       .in('status', ['pending', 'confirmed'])
       .single();
@@ -80,11 +109,11 @@ export async function POST(request: Request) {
       .from('bookings')
       .insert({
         user_id,
-        field_id,
-        date,
+        field_id: sanitizedFieldId,
+        date: sanitizedDate,
         time_slot,
-        start_time,
-        duration,
+        start_time: sanitizedTime,
+        duration: sanitizedDuration,
         status: 'pending',
         payment_method,
         amount,
@@ -120,11 +149,11 @@ export async function POST(request: Request) {
     // Track booking creation server-side
     await trackEventServer('booking', 'booking_created', {
       booking_id: booking.id,
-      field_id: field_id,
+      field_id: sanitizedFieldId,
       user_id: user_id,
-      date,
-      start_time,
-      duration,
+      date: sanitizedDate,
+      start_time: sanitizedTime,
+      duration: sanitizedDuration,
       payment_method,
       amount,
       success: true,
@@ -144,17 +173,10 @@ export async function POST(request: Request) {
 }
 
 // GET handler for user bookings
-export async function GET(request: Request) {
+async function handleGet(request: AuthenticatedRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const user_id = searchParams.get('user_id');
-
-    if (!user_id) {
-      return NextResponse.json(
-        { error: 'User ID is required' },
-        { status: 400 }
-      );
-    }
+    // Get user_id from authenticated user (secure)
+    const user_id = request.user!.userId;
 
     const supabase = await createClient();
 
@@ -184,5 +206,14 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
+}
+
+// Export handlers with auth middleware
+export async function POST(request: NextRequest) {
+  return requireAuth(request, handlePost);
+}
+
+export async function GET(request: NextRequest) {
+  return requireAuth(request, handleGet);
 }
 

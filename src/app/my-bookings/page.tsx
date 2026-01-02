@@ -33,12 +33,19 @@ export default function MyBookingsPage() {
     
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/bookings?user_id=${user.id}`);
+      const response = await fetch('/api/bookings', {
+        credentials: 'include', // Include cookies
+      });
       if (response.ok) {
         const data = await response.json();
         setBookings(data.bookings || []);
       } else {
-        toast.error('Erreur lors du chargement des réservations');
+        if (response.status === 401) {
+          // Not authenticated, redirect to login
+          router.push('/auth/login');
+        } else {
+          toast.error('Erreur lors du chargement des réservations');
+        }
       }
     } catch (error) {
       console.error('Failed to fetch bookings:', error);
@@ -57,6 +64,7 @@ export default function MyBookingsPage() {
     try {
       const response = await fetch(`/api/bookings/${bookingId}/cancel`, {
         method: 'POST',
+        credentials: 'include', // Include cookies
       });
 
       const result = await response.json();

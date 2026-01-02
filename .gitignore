@@ -12,26 +12,52 @@
 
 # testing
 /coverage
+*.test.js.snap
 
 # next.js
 /.next/
 /out/
+/.swc/
 
 # production
 /build
+/dist
 
 # misc
 .DS_Store
 *.pem
+Thumbs.db
+*.swp
+*.swo
+*~
 
 # debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+lerna-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# Environment variables - CRITICAL: Never commit these!
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+*.env
+*.env.json
+http-client.env.json
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+.project
+.classpath
+.settings/
 
 # vercel
 .vercel
@@ -40,6 +66,40 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# training guide (personal use only)
+# Cache and temporary files
+.cache/
+.turbo/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+*.log
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
+# Personal/training files (if any)
 TRAINING_GUIDE.md
 PHASE_1_2_COMPLETE.md
+
+# Database dumps and backups
+*.sql.backup
+*.dump
+*.bak
+
+# Secrets and keys
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+.secrets/
+
+# Local configuration overrides
+config.local.*
+*.local.*

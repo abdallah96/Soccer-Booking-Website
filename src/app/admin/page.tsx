@@ -32,6 +32,7 @@ export default function AdminPage() {
   });
   const [newFacility, setNewFacility] = useState('');
   const [newImage, setNewImage] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [updatingBooking, setUpdatingBooking] = useState<string | null>(null);
   const [savingField, setSavingField] = useState(false);
   const [deletingField, setDeletingField] = useState<string | null>(null);
@@ -57,10 +58,15 @@ export default function AdminPage() {
 
   const fetchBookings = async () => {
     try {
-      const response = await fetch('/api/admin/bookings');
+      const response = await fetch('/api/admin/bookings', {
+        credentials: 'include', // Include cookies
+      });
       if (response.ok) {
         const data = await response.json();
         setBookings(data.bookings || []);
+      } else if (response.status === 401 || response.status === 403) {
+        toast.error('Accès refusé. Admin uniquement.');
+        router.push('/');
       }
     } catch (error) {
       console.error('Failed to fetch bookings:', error);
@@ -69,10 +75,15 @@ export default function AdminPage() {
 
   const fetchFields = async () => {
     try {
-      const response = await fetch('/api/admin/fields');
+      const response = await fetch('/api/admin/fields', {
+        credentials: 'include', // Include cookies
+      });
       if (response.ok) {
         const data = await response.json();
         setFields(data.fields || []);
+      } else if (response.status === 401 || response.status === 403) {
+        toast.error('Accès refusé. Admin uniquement.');
+        router.push('/');
       }
     } catch (error) {
       console.error('Failed to fetch fields:', error);
@@ -81,10 +92,15 @@ export default function AdminPage() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/admin/stats');
+      const response = await fetch('/api/admin/stats', {
+        credentials: 'include', // Include cookies
+      });
       if (response.ok) {
         const data = await response.json();
         setStats(data);
+      } else if (response.status === 401 || response.status === 403) {
+        toast.error('Accès refusé. Admin uniquement.');
+        router.push('/');
       }
     } catch (error) {
       console.error('Failed to fetch stats:', error);
@@ -102,6 +118,7 @@ export default function AdminPage() {
       const response = await fetch('/api/admin/password', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Include cookies
         body: JSON.stringify({ password: newPassword, user_id: user?.id }),
       });
 
@@ -134,12 +151,13 @@ export default function AdminPage() {
       const response = await fetch('/api/admin/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Include cookies
         body: JSON.stringify({
           email: adminData.email,
           name: adminData.name,
           password: adminData.password,
           role: 'admin',
-          admin_user_id: user?.id,
+          // admin_user_id removed - now extracted from JWT
         }),
       });
 
@@ -162,6 +180,7 @@ export default function AdminPage() {
       const response = await fetch(`/api/admin/bookings/${bookingId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Include cookies
         body: JSON.stringify({ status }),
       });
 
@@ -204,6 +223,7 @@ export default function AdminPage() {
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Include cookies
         body: JSON.stringify(payload),
       });
 
@@ -249,6 +269,7 @@ export default function AdminPage() {
     try {
       const response = await fetch(`/api/admin/fields/${fieldId}`, {
         method: 'DELETE',
+        credentials: 'include', // Include cookies
       });
 
       const result = await response.json();
@@ -305,6 +326,55 @@ export default function AdminPage() {
         images: [...fieldData.images, newImage.trim()],
       });
       setNewImage('');
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Type de fichier non autorisé. Utilisez JPEG, PNG ou WebP.');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast.error('Le fichier est trop volumineux. Taille maximale: 5MB');
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/admin/upload', {
+        method: 'POST',
+        credentials: 'include', // Include cookies
+        body: formData,
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        setFieldData({
+          ...fieldData,
+          images: [...fieldData.images, result.url],
+        });
+        toast.success('Image uploadée avec succès');
+      } else {
+        toast.error(result.error || 'Erreur lors de l\'upload');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Erreur lors de l\'upload du fichier');
+    } finally {
+      setUploadingImage(false);
+      // Reset file input
+      e.target.value = '';
     }
   };
 
@@ -668,41 +738,82 @@ export default function AdminPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm text-white/60 mb-2">Images (URLs)</label>
-                    <div className="flex gap-2 mb-2">
-                      <input
-                        type="url"
-                        value={newImage}
-                        onChange={(e) => setNewImage(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addImage())}
-                        placeholder="https://example.com/image.jpg"
-                        className="flex-1 px-4 py-2 bg-black/50 border-2 border-white/20 text-white focus:outline-none focus:border-emerald-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={addImage}
-                        className="px-4 py-2 bg-emerald-500 text-black font-black hover:bg-emerald-400 transition-colors"
-                      >
-                        +
-                      </button>
+                    <label className="block text-sm text-white/60 mb-2">Images</label>
+                    
+                    {/* File Upload */}
+                    <div className="mb-4">
+                      <label className="block text-xs text-white/40 mb-2 font-mono uppercase">Upload depuis votre machine</label>
+                      <div className="flex gap-2">
+                        <label className="flex-1 px-4 py-3 bg-black/50 border-2 border-white/20 text-white cursor-pointer hover:border-emerald-500 transition-colors flex items-center justify-center gap-2">
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/jpg,image/png,image/webp"
+                            onChange={handleFileUpload}
+                            disabled={uploadingImage}
+                            className="hidden"
+                          />
+                          <span>{uploadingImage ? 'Upload en cours...' : '📁 Choisir un fichier'}</span>
+                        </label>
+                      </div>
+                      <p className="text-xs text-white/40 mt-1 font-light">Formats acceptés: JPEG, PNG, WebP (max 5MB)</p>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {fieldData.images.map((image, index) => (
-                        <span
-                          key={index}
-                          className="px-3 py-1 bg-blue-500/20 text-blue-300 border border-blue-500/30 text-sm flex items-center gap-2"
+
+                    {/* URL Input */}
+                    <div className="mb-4">
+                      <label className="block text-xs text-white/40 mb-2 font-mono uppercase">Ou ajouter via URL</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="url"
+                          value={newImage}
+                          onChange={(e) => setNewImage(e.target.value)}
+                          onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addImage())}
+                          placeholder="https://example.com/image.jpg"
+                          className="flex-1 px-4 py-2 bg-black/50 border-2 border-white/20 text-white focus:outline-none focus:border-emerald-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={addImage}
+                          disabled={!newImage.trim()}
+                          className="px-4 py-2 bg-emerald-500 text-black font-black hover:bg-emerald-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Image {index + 1}
-                          <button
-                            type="button"
-                            onClick={() => removeImage(index)}
-                            className="text-red-400 hover:text-red-300"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
+                          +
+                        </button>
+                      </div>
                     </div>
+
+                    {/* Images List */}
+                    {fieldData.images.length > 0 && (
+                      <div className="mt-4">
+                        <label className="block text-xs text-white/40 mb-2 font-mono uppercase">Images ajoutées ({fieldData.images.length})</label>
+                        <div className="flex flex-wrap gap-2">
+                          {fieldData.images.map((image, index) => (
+                            <div
+                              key={index}
+                              className="relative group"
+                            >
+                              <span className="px-3 py-1 bg-blue-500/20 text-blue-300 border border-blue-500/30 text-sm flex items-center gap-2">
+                                <a
+                                  href={image}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="hover:underline truncate max-w-[200px]"
+                                  title={image}
+                                >
+                                  Image {index + 1}
+                                </a>
+                                <button
+                                  type="button"
+                                  onClick={() => removeImage(index)}
+                                  className="text-red-400 hover:text-red-300 ml-1"
+                                >
+                                  ×
+                                </button>
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex gap-3">

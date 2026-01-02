@@ -1,28 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { getAdminClient } from '@/lib/supabase/admin';
 import bcrypt from 'bcryptjs';
+import { requireAdmin, AuthenticatedRequest } from '@/lib/middleware/auth';
+import { sanitizeEmail, sanitizeString } from '@/lib/utils/sanitize';
 
-export async function POST(request: NextRequest) {
+async function handlePost(request: AuthenticatedRequest) {
   try {
-    const { email, password, name, role, admin_user_id } = await request.json();
+    const { email, password, name, role } = await request.json();
     
-    const supabase = await createClient();
-    
-    // Verify admin_user_id is actually an admin
-    if (admin_user_id) {
-      const { data: admin } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', admin_user_id)
-        .single();
-      
-      if (!admin || admin.role !== 'admin') {
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
+    // Input validation and sanitization
+    if (!email || !password || !name) {
+      return NextResponse.json(
+        { error: 'Email, password, and name are required' },
+        { status: 400 }
+      );
     }
+
+    const sanitizedEmail = sanitizeEmail(email);
+    if (!sanitizedEmail || !sanitizedEmail.includes('@')) {
+      return NextResponse.json(
+        { error: 'Invalid email format' },
+        { status: 400 }
+      );
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json(
+        { error: 'Password must be at least 6 characters' },
+        { status: 400 }
+      );
+    }
+
+    const sanitizedName = sanitizeString(name);
+    if (sanitizedName.length < 2) {
+      return NextResponse.json(
+        { error: 'Name must be at least 2 characters' },
+        { status: 400 }
+      );
+    }
+
+    const supabase = getAdminClient();
 
     if (!email || !password || !name) {
       return NextResponse.json(
@@ -39,10 +56,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user exists
+    // @ts-ignore - Supabase types don't work well with service role client
     const { data: existingUser } = await supabase
       .from('users')
       .select('id')
-      .eq('email', email)
+      .eq('email', sanitizedEmail)
       .single();
 
     if (existingUser) {
@@ -58,9 +76,10 @@ export async function POST(request: NextRequest) {
     // Create user
     const { data: user, error } = await supabase
       .from('users')
+      // @ts-expect-error - Service role client types
       .insert({
-        email,
-        name,
+        email: sanitizedEmail,
+        name: sanitizedName,
         password_hash: hashedPassword,
         role: role || 'admin',
       })
@@ -86,5 +105,9 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function POST(request: NextRequest) {
+  return requireAdmin(request, handlePost);
 }
 

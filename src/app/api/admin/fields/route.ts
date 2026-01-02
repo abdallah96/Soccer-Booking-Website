@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase/admin';
+import { requireAdmin, AuthenticatedRequest } from '@/lib/middleware/auth';
+import { sanitizeString, sanitizeNumber } from '@/lib/utils/sanitize';
 
 // GET all fields (admin view)
-export async function GET() {
+async function handleGet(request: AuthenticatedRequest) {
   try {
     const supabase = getAdminClient();
 
@@ -31,12 +33,12 @@ export async function GET() {
 }
 
 // POST create new field
-export async function POST(request: NextRequest) {
+async function handlePost(request: AuthenticatedRequest) {
   try {
     const body = await request.json();
     const { name, description, location, price_per_hour, capacity, rating, facilities, images } = body;
 
-    // Validation
+    // Validation and sanitization
     if (!name || !description || !location) {
       return NextResponse.json(
         { error: 'Nom, description et localisation sont requis' },
@@ -44,19 +46,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!price_per_hour || price_per_hour <= 0) {
+    const sanitizedName = sanitizeString(name);
+    const sanitizedDescription = sanitizeString(description);
+    const sanitizedLocation = sanitizeString(location);
+
+    if (sanitizedName.length < 2) {
+      return NextResponse.json(
+        { error: 'Le nom doit contenir au moins 2 caractères' },
+        { status: 400 }
+      );
+    }
+
+    const sanitizedPrice = sanitizeNumber(price_per_hour, 1);
+    if (!sanitizedPrice || sanitizedPrice <= 0) {
       return NextResponse.json(
         { error: 'Le prix par heure doit être supérieur à 0' },
         { status: 400 }
       );
     }
 
-    if (!capacity || capacity <= 0) {
+    const sanitizedCapacity = sanitizeNumber(capacity, 1);
+    if (!sanitizedCapacity || sanitizedCapacity <= 0) {
       return NextResponse.json(
         { error: 'La capacité doit être supérieure à 0' },
         { status: 400 }
       );
     }
+
+    const sanitizedRating = rating ? sanitizeNumber(rating, 0, 5) : 0;
+
+    // Validate facilities and images are arrays
+    const sanitizedFacilities = Array.isArray(facilities) 
+      ? facilities.map(f => sanitizeString(String(f))).filter(Boolean)
+      : [];
+    const sanitizedImages = Array.isArray(images)
+      ? images.map(img => String(img).trim()).filter(Boolean).slice(0, 10) // Max 10 images
+      : [];
 
     const supabase = getAdminClient();
 
@@ -65,7 +90,7 @@ export async function POST(request: NextRequest) {
     const { data: existingField } = await supabase
       .from('fields')
       .select('id')
-      .eq('name', name)
+      .eq('name', sanitizedName)
       .single();
 
     if (existingField) {
@@ -81,14 +106,14 @@ export async function POST(request: NextRequest) {
       .from('fields')
       // @ts-ignore
       .insert({
-        name,
-        description,
-        location,
-        price_per_hour: Number(price_per_hour),
-        capacity: Number(capacity),
-        rating: rating ? Number(rating) : 0,
-        facilities: facilities || [],
-        images: images || [],
+        name: sanitizedName,
+        description: sanitizedDescription,
+        location: sanitizedLocation,
+        price_per_hour: sanitizedPrice,
+        capacity: sanitizedCapacity,
+        rating: sanitizedRating,
+        facilities: sanitizedFacilities,
+        images: sanitizedImages,
       })
       .select()
       .single();
@@ -112,5 +137,13 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function GET(request: NextRequest) {
+  return requireAdmin(request, handleGet);
+}
+
+export async function POST(request: NextRequest) {
+  return requireAdmin(request, handlePost);
 }
 

@@ -21,6 +21,7 @@ export default function FieldDetailPage() {
   const router = useRouter();
   const { user } = useAuthStore();
   const { field, isLoading, error } = useField(params.id as string);
+  const [imageError, setImageError] = useState(false);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedStartTime, setSelectedStartTime] = useState('');
   const [selectedDuration, setSelectedDuration] = useState<60 | 90>(60);
@@ -74,13 +75,14 @@ export default function FieldDetailPage() {
       const response = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Include cookies
         body: JSON.stringify({
           field_id: field?.id,
           date: selectedDate,
           start_time: selectedStartTime,
           duration: selectedDuration,
           payment_method: selectedPaymentMethod,
-          user_id: user.id,
+          // user_id is now extracted from JWT cookie automatically
         }),
       });
 
@@ -166,11 +168,12 @@ export default function FieldDetailPage() {
             <div className="relative">
               <div className="absolute -bottom-2 -right-2 w-full h-full border-2 border-emerald-500/30"></div>
               <div className="relative bg-white/5 backdrop-blur-md border border-white/10 overflow-hidden">
-                {field.images && field.images[0] ? (
+                {field.images && field.images[0] && !imageError ? (
                   <img
                     src={field.images[0]}
                     alt={field.name}
                     className="w-full h-96 object-cover"
+                    onError={() => setImageError(true)}
                   />
                 ) : (
                   <div className="w-full h-96 bg-gradient-to-br from-emerald-500/20 to-blue-500/20 flex items-center justify-center">

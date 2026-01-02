@@ -14,7 +14,7 @@ import { trackPageView, trackAuth, trackAction } from '@/lib/utils/analytics';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { setUser, setToken, setError } = useAuthStore();
+  const { setUser, setError } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -51,7 +51,6 @@ export default function RegisterPage() {
       }
 
       setUser(result.user);
-      setToken(result.token);
       trackAuth('user_registered', { 
         user_id: result.user.id,
         has_phone: !!data.phone 

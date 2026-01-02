@@ -14,7 +14,7 @@ import { trackPageView, trackAuth, trackAction } from '@/lib/utils/analytics';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { setUser, setToken, setError } = useAuthStore();
+  const { setUser, setError } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -47,7 +47,6 @@ export default function LoginPage() {
       }
 
       setUser(result.user);
-      setToken(result.token);
       trackAuth('user_logged_in', { 
         user_id: result.user.id,
         role: result.user.role 

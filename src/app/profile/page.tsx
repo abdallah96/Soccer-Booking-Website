@@ -46,7 +46,9 @@ export default function ProfilePage() {
     if (!user?.id) return;
 
     try {
-      const response = await fetch(`/api/bookings?user_id=${user.id}`);
+      const response = await fetch('/api/bookings', {
+        credentials: 'include', // Include cookies
+      });
       if (response.ok) {
         const data = await response.json();
         const bookings = data.bookings || [];
@@ -78,6 +80,7 @@ export default function ProfilePage() {
       const response = await fetch(`/api/users/${user.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Include cookies
         body: JSON.stringify(formData),
       });
 

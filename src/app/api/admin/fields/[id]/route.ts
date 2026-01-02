@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { Field } from '@/types';
+import { requireAdmin, AuthenticatedRequest } from '@/lib/middleware/auth';
+import { sanitizeUUID, sanitizeString, sanitizeNumber } from '@/lib/utils/sanitize';
 
 // GET single field
-export async function GET(
-  request: NextRequest,
+async function handleGet(
+  request: AuthenticatedRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -36,16 +38,24 @@ export async function GET(
 }
 
 // PUT update field
-export async function PUT(
-  request: NextRequest,
+async function handlePut(
+  request: AuthenticatedRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
+    const sanitizedId = sanitizeUUID(id);
+    if (!sanitizedId) {
+      return NextResponse.json(
+        { error: 'ID de terrain invalide' },
+        { status: 400 }
+      );
+    }
+
     const body = await request.json();
     const { name, description, location, price_per_hour, capacity, rating, facilities, images } = body;
 
-    // Validation
+    // Validation and sanitization
     if (!name || !description || !location) {
       return NextResponse.json(
         { error: 'Nom, description et localisation sont requis' },
@@ -53,19 +63,34 @@ export async function PUT(
       );
     }
 
-    if (price_per_hour !== undefined && price_per_hour <= 0) {
+    const sanitizedName = sanitizeString(name);
+    const sanitizedDescription = sanitizeString(description);
+    const sanitizedLocation = sanitizeString(location);
+
+    if (sanitizedName.length < 2) {
+      return NextResponse.json(
+        { error: 'Le nom doit contenir au moins 2 caractères' },
+        { status: 400 }
+      );
+    }
+
+    const sanitizedPrice = price_per_hour !== undefined ? sanitizeNumber(price_per_hour, 1) : null;
+    if (sanitizedPrice !== null && sanitizedPrice <= 0) {
       return NextResponse.json(
         { error: 'Le prix par heure doit être supérieur à 0' },
         { status: 400 }
       );
     }
 
-    if (capacity !== undefined && capacity <= 0) {
+    const sanitizedCapacity = capacity !== undefined ? sanitizeNumber(capacity, 1) : null;
+    if (sanitizedCapacity !== null && sanitizedCapacity <= 0) {
       return NextResponse.json(
         { error: 'La capacité doit être supérieure à 0' },
         { status: 400 }
       );
     }
+
+    const sanitizedRating = rating !== undefined ? sanitizeNumber(rating, 0, 5) : null;
 
     const supabase = getAdminClient();
 
@@ -74,7 +99,7 @@ export async function PUT(
     const { data: existingFieldData, error: fetchError } = await supabase
       .from('fields')
       .select('id, name')
-      .eq('id', id)
+      .eq('id', sanitizedId)
       .single();
 
     if (fetchError || !existingFieldData) {
@@ -87,13 +112,13 @@ export async function PUT(
     const existingField = existingFieldData as { id: string; name: string };
 
     // Check if another field with same name exists (excluding current field)
-    if (name !== existingField.name) {
+    if (sanitizedName !== existingField.name) {
       // @ts-ignore - Supabase types don't work well with service role client
       const { data: duplicateField } = await supabase
         .from('fields')
         .select('id')
-        .eq('name', name)
-        .neq('id', id)
+        .eq('name', sanitizedName)
+        .neq('id', sanitizedId)
         .single();
 
       if (duplicateField) {
@@ -104,28 +129,36 @@ export async function PUT(
       }
     }
 
+    // Sanitize facilities and images
+    const sanitizedFacilities = facilities !== undefined
+      ? (Array.isArray(facilities) ? facilities.map(f => sanitizeString(String(f))).filter(Boolean) : [])
+      : undefined;
+    const sanitizedImages = images !== undefined
+      ? (Array.isArray(images) ? images.map(img => String(img).trim()).filter(Boolean).slice(0, 10) : [])
+      : undefined;
+
     // Update field
     const updateData: any = {
-      name,
-      description,
-      location,
+      name: sanitizedName,
+      description: sanitizedDescription,
+      location: sanitizedLocation,
       updated_at: new Date().toISOString(),
     };
 
-    if (price_per_hour !== undefined) {
-      updateData.price_per_hour = Number(price_per_hour);
+    if (sanitizedPrice !== null) {
+      updateData.price_per_hour = sanitizedPrice;
     }
-    if (capacity !== undefined) {
-      updateData.capacity = Number(capacity);
+    if (sanitizedCapacity !== null) {
+      updateData.capacity = sanitizedCapacity;
     }
-    if (rating !== undefined) {
-      updateData.rating = Number(rating);
+    if (sanitizedRating !== null) {
+      updateData.rating = sanitizedRating;
     }
-    if (facilities !== undefined) {
-      updateData.facilities = facilities;
+    if (sanitizedFacilities !== undefined) {
+      updateData.facilities = sanitizedFacilities;
     }
-    if (images !== undefined) {
-      updateData.images = images;
+    if (sanitizedImages !== undefined) {
+      updateData.images = sanitizedImages;
     }
 
     // @ts-ignore - Supabase types don't work well with service role client
@@ -133,7 +166,7 @@ export async function PUT(
       .from('fields')
       // @ts-ignore
       .update(updateData)
-      .eq('id', id)
+      .eq('id', sanitizedId)
       .select()
       .single();
 
@@ -159,12 +192,20 @@ export async function PUT(
 }
 
 // DELETE field
-export async function DELETE(
-  request: NextRequest,
+async function handleDelete(
+  request: AuthenticatedRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
+    const sanitizedId = sanitizeUUID(id);
+    if (!sanitizedId) {
+      return NextResponse.json(
+        { error: 'ID de terrain invalide' },
+        { status: 400 }
+      );
+    }
+
     const supabase = getAdminClient();
 
     // Check if field exists
@@ -172,7 +213,7 @@ export async function DELETE(
     const { data: existingField } = await supabase
       .from('fields')
       .select('id')
-      .eq('id', id)
+      .eq('id', sanitizedId)
       .single();
 
     if (!existingField) {
@@ -187,7 +228,7 @@ export async function DELETE(
     const { data: bookings } = await supabase
       .from('bookings')
       .select('id')
-      .eq('field_id', id)
+      .eq('field_id', sanitizedId)
       .limit(1);
 
     if (bookings && bookings.length > 0) {
@@ -202,7 +243,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('fields')
       .delete()
-      .eq('id', id);
+      .eq('id', sanitizedId);
 
     if (error) {
       console.error('Field deletion error:', error);
@@ -222,5 +263,32 @@ export async function DELETE(
       { status: 500 }
     );
   }
+}
+
+export async function GET(
+  request: NextRequest,
+  params: { params: Promise<{ id: string }> }
+) {
+  return requireAdmin(request, async (authRequest) => {
+    return handleGet(authRequest, params);
+  });
+}
+
+export async function PUT(
+  request: NextRequest,
+  params: { params: Promise<{ id: string }> }
+) {
+  return requireAdmin(request, async (authRequest) => {
+    return handlePut(authRequest, params);
+  });
+}
+
+export async function DELETE(
+  request: NextRequest,
+  params: { params: Promise<{ id: string }> }
+) {
+  return requireAdmin(request, async (authRequest) => {
+    return handleDelete(authRequest, params);
+  });
 }
 

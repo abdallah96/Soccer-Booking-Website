@@ -10,8 +10,15 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: '*.blob.vercel-storage.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.in',
       }
-      // Add your specific Vercel Blob domain if different
     ],
   },
 };

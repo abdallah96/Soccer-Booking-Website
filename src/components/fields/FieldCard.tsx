@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 import { Field } from '@/types';
 import { PRICING } from '@/lib/config/constants';
@@ -14,6 +17,7 @@ interface FieldCardProps {
  * Supports both compact (list) and detailed (single) variants
  */
 export function FieldCard({ field, variant = 'compact', showButton = true }: FieldCardProps) {
+  const [imageError, setImageError] = useState(false);
   const dayPrice = field.price_per_hour || PRICING.DEFAULT_DAY_RATE;
   const nightPrice = Math.round(dayPrice * PRICING.NIGHT_RATE_MULTIPLIER);
 
@@ -26,12 +30,13 @@ export function FieldCard({ field, variant = 'compact', showButton = true }: Fie
       <div className="absolute -bottom-2 -right-2 w-full h-full border-2 border-emerald-500/30 group-hover:border-emerald-500/50 transition-colors"></div>
       <div className="relative bg-white/5 backdrop-blur-md border border-white/10 overflow-hidden group-hover:bg-white/10 transition-colors">
         <div className={`relative w-full ${variant === 'compact' ? 'h-64' : 'h-96'} overflow-hidden`}>
-          {field.images && field.images[0] ? (
+          {field.images && field.images[0] && !imageError ? (
             <>
               <img
                 src={field.images[0]}
                 alt={field.name}
                 className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
+                onError={() => setImageError(true)}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
             </>

@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { getAdminClient } from '@/lib/supabase/admin';
 import { trackEventServer } from '@/lib/utils/analytics-server';
+import { requireAdmin, AuthenticatedRequest } from '@/lib/middleware/auth';
+import { sanitizeUUID } from '@/lib/utils/sanitize';
 
-export async function PUT(
-  request: NextRequest,
+async function handlePut(
+  request: AuthenticatedRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -17,12 +19,21 @@ export async function PUT(
       );
     }
 
-    const supabase = await createClient();
+    const sanitizedBookingId = sanitizeUUID(bookingId);
+    if (!sanitizedBookingId) {
+      return NextResponse.json(
+        { error: 'ID de réservation invalide' },
+        { status: 400 }
+      );
+    }
+
+    const supabase = getAdminClient();
 
     const { data: booking, error } = await supabase
       .from('bookings')
+      // @ts-expect-error - Service role client types
       .update({ status })
-      .eq('id', bookingId)
+      .eq('id', sanitizedBookingId)
       .select()
       .single();
 
@@ -35,15 +46,17 @@ export async function PUT(
     }
 
     // Track booking status change
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const bookingData = booking as any;
     await trackEventServer(
       'booking',
       status === 'confirmed' ? 'booking_confirmed' : 'booking_cancelled',
       {
-        booking_id: bookingId,
-        booking: booking,
+        booking_id: sanitizedBookingId,
+        booking: bookingData,
         status,
       },
-      booking?.user_id
+      bookingData?.user_id
     );
 
     return NextResponse.json({ booking, message: 'Booking updated successfully' });
@@ -54,5 +67,14 @@ export async function PUT(
       { status: 500 }
     );
   }
+}
+
+export async function PUT(
+  request: NextRequest,
+  params: { params: Promise<{ id: string }> }
+) {
+  return requireAdmin(request, async (authRequest) => {
+    return handlePut(authRequest, params);
+  });
 }
 
