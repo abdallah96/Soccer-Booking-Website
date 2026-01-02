@@ -197,11 +197,22 @@ export default function AdminPage() {
     const weeks: { weekStart: Date; weekEnd: Date; weekStartStr: string }[] = [];
     const today = new Date();
     
+    // Get Monday of a date using local time (same as API)
     const getMonday = (date: Date) => {
-      const d = new Date(date);
-      const day = d.getDay();
-      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-      return new Date(d.setDate(diff));
+      const year = date.getFullYear();
+      const month = date.getMonth();
+      const day = date.getDate();
+      const dayOfWeek = date.getDay();
+      const diff = day - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+      return new Date(year, month, diff);
+    };
+    
+    // Format date as YYYY-MM-DD using local time (same as API)
+    const formatDate = (date: Date): string => {
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
     };
     
     const currentMonday = getMonday(today);
@@ -215,7 +226,7 @@ export default function AdminPage() {
       weeks.push({
         weekStart,
         weekEnd,
-        weekStartStr: weekStart.toISOString().split('T')[0],
+        weekStartStr: formatDate(weekStart),
       });
     }
     
@@ -647,179 +658,191 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gray-900">
-      {/* Mobile Header - Fixed */}
+      {/* Header */}
       <div className="sticky top-0 z-50 bg-gray-900/95 backdrop-blur-md border-b border-white/10">
-        <div className="px-4 py-4">
+        <div className="px-4 lg:px-8 py-4 max-w-7xl mx-auto">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-black text-white">ADMIN</h1>
-              <p className="text-xs text-white/50">Bienvenue, {user?.name}</p>
+              <h1 className="text-xl lg:text-3xl font-black text-white">PANEL ADMIN</h1>
+              <p className="text-xs lg:text-sm text-white/50">Bienvenue, {user?.name}</p>
         </div>
 
-            {/* Quick stats on mobile */}
-            {pendingCount > 0 && (
+            {/* Quick stats */}
+            <div className="flex items-center gap-4">
+              {pendingCount > 0 && (
           <button
-                onClick={() => setActiveSection('bookings')}
-                className="flex items-center gap-2 px-3 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-lg"
-              >
-                <span className="text-yellow-400 font-black text-lg">{pendingCount}</span>
-                <span className="text-yellow-300 text-xs">en attente</span>
+                  onClick={() => setActiveSection('bookings')}
+                  className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-lg hover:bg-yellow-500/30 transition-colors"
+                >
+                  <span className="text-yellow-400 font-black text-lg lg:text-2xl">{pendingCount}</span>
+                  <span className="text-yellow-300 text-xs lg:text-sm">en attente</span>
           </button>
-            )}
+              )}
+          <button
+                onClick={() => setShowManualBooking(true)}
+                className="hidden lg:flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-black hover:bg-red-700 transition-colors"
+              >
+                📞 Nouvelle réservation
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Mobile Navigation */}
-        <div className="flex overflow-x-auto no-scrollbar border-t border-white/5">
-          {[
-            { id: 'dashboard', label: '🏠', fullLabel: 'Accueil' },
-            { id: 'bookings', label: '📅', fullLabel: 'Réservations', badge: pendingCount },
-            { id: 'availability', label: '📆', fullLabel: 'Disponibilités' },
-            { id: 'fields', label: '⚽', fullLabel: 'Terrain' },
-            { id: 'settings', label: '⚙️', fullLabel: 'Paramètres' },
-          ].map((item) => (
-          <button
-              key={item.id}
-              onClick={() => setActiveSection(item.id as ActiveSection)}
-              className={`flex-1 min-w-[70px] flex flex-col items-center py-3 px-2 transition-colors relative ${
-                activeSection === item.id
-                  ? 'text-red-500 bg-red-500/10'
-                  : 'text-white/60'
-              }`}
-            >
-              <span className="text-lg">{item.label}</span>
-              <span className="text-[10px] mt-1">{item.fullLabel}</span>
-              {item.badge ? (
-                <span className="absolute top-1 right-2 w-5 h-5 bg-yellow-500 text-black text-[10px] font-black rounded-full flex items-center justify-center">
-                  {item.badge}
-                </span>
-              ) : null}
+        {/* Navigation */}
+        <div className="px-4 lg:px-8 max-w-7xl mx-auto">
+          <div className="flex overflow-x-auto no-scrollbar border-t border-white/5 lg:border-0 lg:gap-2">
+            {[
+              { id: 'dashboard', label: '🏠', fullLabel: 'Accueil' },
+              { id: 'bookings', label: '📅', fullLabel: 'Réservations', badge: pendingCount },
+              { id: 'availability', label: '📆', fullLabel: 'Disponibilités' },
+              { id: 'fields', label: '⚽', fullLabel: 'Terrain' },
+              { id: 'settings', label: '⚙️', fullLabel: 'Paramètres' },
+            ].map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveSection(item.id as ActiveSection)}
+                className={`flex-1 lg:flex-none min-w-[70px] lg:min-w-0 flex flex-col lg:flex-row items-center lg:gap-2 py-3 px-2 lg:px-6 lg:py-4 transition-colors relative rounded-t-xl ${
+                  activeSection === item.id
+                    ? 'text-red-500 bg-red-500/10 lg:bg-red-500/20'
+                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <span className="text-lg lg:text-xl">{item.label}</span>
+                <span className="text-[10px] lg:text-sm mt-1 lg:mt-0 font-medium">{item.fullLabel}</span>
+                {item.badge ? (
+                  <span className="absolute top-1 right-2 lg:relative lg:top-0 lg:right-0 w-5 h-5 lg:w-6 lg:h-6 bg-yellow-500 text-black text-[10px] lg:text-xs font-black rounded-full flex items-center justify-center lg:ml-2">
+                    {item.badge}
+                  </span>
+                ) : null}
           </button>
-          ))}
+            ))}
+          </div>
         </div>
         </div>
 
       {/* Main Content */}
-      <div className="px-4 py-6 pb-24 max-w-4xl mx-auto">
+      <div className="px-4 lg:px-8 py-6 pb-24 max-w-7xl mx-auto">
         
         {/* DASHBOARD */}
         {activeSection === 'dashboard' && (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* Quick Actions */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <button
                 onClick={() => setActiveSection('bookings')}
-                className="bg-gradient-to-br from-yellow-500/20 to-yellow-600/10 border border-yellow-500/30 p-4 rounded-2xl text-left"
+                className="bg-gradient-to-br from-yellow-500/20 to-yellow-600/10 border border-yellow-500/30 p-4 lg:p-6 rounded-2xl text-left hover:scale-105 transition-transform"
               >
-                <div className="text-3xl font-black text-yellow-400 mb-1">
+                <div className="text-3xl lg:text-5xl font-black text-yellow-400 mb-1 lg:mb-2">
                   {pendingCount}
-              </div>
-                <div className="text-sm text-yellow-300/80">À confirmer</div>
+                </div>
+                <div className="text-sm lg:text-base text-yellow-300/80">À confirmer</div>
               </button>
               
               <button
                 onClick={() => setShowManualBooking(true)}
-                className="bg-gradient-to-br from-red-500/20 to-red-600/10 border border-red-500/30 p-4 rounded-2xl text-left"
+                className="bg-gradient-to-br from-red-500/20 to-red-600/10 border border-red-500/30 p-4 lg:p-6 rounded-2xl text-left hover:scale-105 transition-transform"
               >
-                <div className="text-2xl mb-1">📞</div>
-                <div className="text-sm text-red-300/80">Nouvelle résa</div>
+                <div className="text-2xl lg:text-4xl mb-1 lg:mb-2">📞</div>
+                <div className="text-sm lg:text-base text-red-300/80">Nouvelle résa</div>
               </button>
               
               <button
                 onClick={() => setActiveSection('availability')}
-                className="bg-gradient-to-br from-green-500/20 to-green-600/10 border border-green-500/30 p-4 rounded-2xl text-left"
+                className="bg-gradient-to-br from-green-500/20 to-green-600/10 border border-green-500/30 p-4 lg:p-6 rounded-2xl text-left hover:scale-105 transition-transform"
               >
-                <div className="text-2xl mb-1">📆</div>
-                <div className="text-sm text-green-300/80">Semaines</div>
+                <div className="text-2xl lg:text-4xl mb-1 lg:mb-2">📆</div>
+                <div className="text-sm lg:text-base text-green-300/80">Semaines</div>
               </button>
               
               <button
                 onClick={() => setShowStats(!showStats)}
-                className="bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/30 p-4 rounded-2xl text-left"
+                className="bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/30 p-4 lg:p-6 rounded-2xl text-left hover:scale-105 transition-transform"
               >
-                <div className="text-2xl mb-1">📊</div>
-                <div className="text-sm text-blue-300/80">Statistiques</div>
+                <div className="text-2xl lg:text-4xl mb-1 lg:mb-2">📊</div>
+                <div className="text-sm lg:text-base text-blue-300/80">Statistiques</div>
               </button>
             </div>
 
-            {/* Expandable Stats */}
-            {showStats && stats && (
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3 animate-fadeIn">
-                <div className="flex justify-between items-center">
-                  <span className="text-white/60 text-sm">Total réservations</span>
-                  <span className="text-white font-black">{stats.stats?.total_bookings || 0}</span>
+            {/* Stats Grid - Always visible on desktop */}
+        {stats && (
+              <div className={`grid grid-cols-2 lg:grid-cols-4 gap-4 ${showStats ? '' : 'hidden lg:grid'}`}>
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 lg:p-6">
+                  <div className="text-white/60 text-sm lg:text-base mb-2">Total réservations</div>
+                  <div className="text-2xl lg:text-4xl font-black text-white">{stats.stats?.total_bookings || 0}</div>
               </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-white/60 text-sm">Confirmées</span>
-                  <span className="text-green-400 font-black">{stats.stats?.confirmed_bookings || 0}</span>
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 lg:p-6">
+                  <div className="text-white/60 text-sm lg:text-base mb-2">Confirmées</div>
+                  <div className="text-2xl lg:text-4xl font-black text-green-400">{stats.stats?.confirmed_bookings || 0}</div>
             </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-white/60 text-sm">Revenus total</span>
-                  <span className="text-red-400 font-black">
-                    {new Intl.NumberFormat('fr-FR').format(stats.stats?.total_revenue || 0)} FCFA
-                  </span>
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 lg:p-6">
+                  <div className="text-white/60 text-sm lg:text-base mb-2">Revenus total</div>
+                  <div className="text-xl lg:text-3xl font-black text-red-400">
+                    {new Intl.NumberFormat('fr-FR').format(stats.stats?.total_revenue || 0)} <span className="text-sm lg:text-lg">FCFA</span>
               </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-white/60 text-sm">30 derniers jours</span>
-                  <span className="text-red-400 font-black">
-                    {new Intl.NumberFormat('fr-FR').format(stats.stats?.revenue_last_30_days || 0)} FCFA
-                  </span>
+            </div>
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 lg:p-6">
+                  <div className="text-white/60 text-sm lg:text-base mb-2">30 derniers jours</div>
+                  <div className="text-xl lg:text-3xl font-black text-red-400">
+                    {new Intl.NumberFormat('fr-FR').format(stats.stats?.revenue_last_30_days || 0)} <span className="text-sm lg:text-lg">FCFA</span>
+              </div>
             </div>
               </div>
             )}
 
             {/* Recent Pending Bookings */}
             {pendingCount > 0 && (
-              <div className="space-y-3">
-                <h3 className="text-white font-black">Réservations en attente</h3>
-                {bookings
-                  .filter(b => b.status === 'pending')
-                  .slice(0, 3)
-                  .map((booking) => (
-                    <div
-                      key={booking.id}
-                      className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4"
-                    >
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <div className="text-white font-black">
-                            {new Date(booking.date).toLocaleDateString('fr-FR', { 
-                              weekday: 'short', 
-                              day: 'numeric', 
-                              month: 'short' 
-                            })}
-            </div>
-                          <div className="text-yellow-300 text-sm">⏰ {booking.time_slot}</div>
-                          <div className="text-white/60 text-xs mt-1">{booking.user?.name || 'N/A'}</div>
+              <div className="space-y-4">
+                <h3 className="text-xl lg:text-2xl text-white font-black">Réservations en attente</h3>
+                <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {bookings
+                    .filter(b => b.status === 'pending')
+                    .slice(0, 6)
+                    .map((booking) => (
+                      <div
+                        key={booking.id}
+                        className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 lg:p-6"
+                      >
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <div className="text-white font-black text-lg">
+                              {new Date(booking.date).toLocaleDateString('fr-FR', { 
+                                weekday: 'short', 
+                                day: 'numeric', 
+                                month: 'short' 
+                              })}
+                            </div>
+                            <div className="text-yellow-300 text-sm lg:text-base">⏰ {booking.time_slot}</div>
+                            <div className="text-white/60 text-sm mt-1">{booking.user?.name || 'N/A'}</div>
                         </div>
                         <div className="text-right">
                           <div className="text-yellow-400 font-black">{booking.amount?.toLocaleString()} FCFA</div>
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleConfirmBooking(booking.id, 'confirmed')}
-                          disabled={updatingBooking === booking.id}
-                          className="flex-1 py-2 bg-green-600 text-white text-sm font-black rounded-lg disabled:opacity-50"
-                        >
-                          ✓ Confirmer
-                        </button>
-                        <button
-                          onClick={() => handleConfirmBooking(booking.id, 'cancelled')}
-                          disabled={updatingBooking === booking.id}
-                          className="px-4 py-2 bg-red-500/20 text-red-400 text-sm font-black rounded-lg border border-red-500/30"
-                        >
-                          ✕
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleConfirmBooking(booking.id, 'confirmed')}
+                            disabled={updatingBooking === booking.id}
+                            className="flex-1 py-2 lg:py-3 bg-green-600 text-white text-sm lg:text-base font-black rounded-lg disabled:opacity-50 hover:bg-green-700 transition-colors"
+                          >
+                            ✓ Confirmer
+                          </button>
+                          <button
+                            onClick={() => handleConfirmBooking(booking.id, 'cancelled')}
+                            disabled={updatingBooking === booking.id}
+                            className="px-4 py-2 lg:py-3 bg-red-500/20 text-red-400 text-sm lg:text-base font-black rounded-lg border border-red-500/30 hover:bg-red-500/30 transition-colors"
+                          >
+                            ✕
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                {pendingCount > 3 && (
+                    ))}
+                </div>
+                {pendingCount > 6 && (
                   <button
                     onClick={() => setActiveSection('bookings')}
-                    className="w-full py-3 bg-white/5 text-white/60 text-sm rounded-xl border border-white/10"
+                    className="w-full py-3 bg-white/5 text-white/60 text-sm rounded-xl border border-white/10 hover:bg-white/10 transition-colors"
                   >
-                    Voir les {pendingCount - 3} autres →
+                    Voir les {pendingCount - 6} autres →
                   </button>
                 )}
               </div>
@@ -829,16 +852,16 @@ export default function AdminPage() {
 
         {/* BOOKINGS */}
         {activeSection === 'bookings' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-black text-white">Réservations</h2>
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl lg:text-3xl font-black text-white">Réservations</h2>
               <button
                 onClick={() => setShowManualBooking(true)}
-                className="px-4 py-2 bg-red-600 text-white text-sm font-black rounded-lg"
+                className="px-4 lg:px-6 py-2 lg:py-3 bg-red-600 text-white text-sm lg:text-base font-black rounded-lg hover:bg-red-700 transition-colors"
               >
-                + Nouvelle
+                + Nouvelle réservation
               </button>
-              </div>
+            </div>
 
             {bookings.length === 0 ? (
               <div className="text-center py-12 text-white/40">
@@ -913,15 +936,19 @@ export default function AdminPage() {
 
         {/* AVAILABILITY */}
         {activeSection === 'availability' && (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* Week Management */}
             <div>
-              <h2 className="text-xl font-black text-white mb-4">Semaines ouvertes</h2>
-              <p className="text-white/50 text-sm mb-4">
-                Activez les semaines pour permettre les réservations
-              </p>
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl lg:text-3xl font-black text-white">Semaines ouvertes</h2>
+                  <p className="text-white/50 text-sm lg:text-base mt-1">
+                    Cliquez pour ouvrir ou fermer une semaine aux réservations
+                  </p>
+                </div>
+              </div>
               
-              <div className="space-y-2">
+              <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-4">
                 {generateWeeks().slice(0, 6).map((week) => {
                   const weekData = weekAvailability.find(w => w.week_start_date === week.weekStartStr);
                   const isOpen = weekData?.is_open !== false;
@@ -930,25 +957,25 @@ export default function AdminPage() {
                   return (
                     <div
                       key={week.weekStartStr}
-                      className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+                      className={`flex items-center justify-between p-4 lg:p-6 rounded-xl border-2 transition-all ${
                         isOpen ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'
                       }`}
                     >
                       <div>
-                        <div className="text-white font-black text-sm">
+                        <div className="text-white font-black text-sm lg:text-lg">
                           {week.weekStart.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} - {week.weekEnd.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-                  </div>
-                        <div className="text-white/40 text-xs">
-                          {week.weekStart.toLocaleDateString('fr-FR', { weekday: 'long' }).charAt(0).toUpperCase() + week.weekStart.toLocaleDateString('fr-FR', { weekday: 'long' }).slice(1)}
-                </div>
+                        </div>
+                        <div className="text-white/40 text-xs lg:text-sm">
+                          Semaine du {week.weekStart.toLocaleDateString('fr-FR', { weekday: 'long' })}
+                        </div>
                       </div>
                       <button
                         onClick={() => handleToggleWeek(week.weekStartStr, isOpen)}
                         disabled={isUpdating}
-                        className={`px-4 py-2 rounded-lg font-black text-sm transition-all ${
+                        className={`px-4 lg:px-6 py-2 lg:py-3 rounded-lg font-black text-sm lg:text-base transition-all cursor-pointer hover:opacity-80 ${
                           isOpen
-                            ? 'bg-green-500 text-white'
-                            : 'bg-red-500 text-white'
+                            ? 'bg-green-500 text-white hover:bg-green-600'
+                            : 'bg-red-500 text-white hover:bg-red-600'
                         } disabled:opacity-50`}
                       >
                         {isUpdating ? '...' : isOpen ? 'OUVERT' : 'FERMÉ'}
@@ -963,12 +990,12 @@ export default function AdminPage() {
                   const el = document.getElementById('all-weeks');
                   if (el) el.classList.toggle('hidden');
                 }}
-                className="w-full mt-3 py-2 text-white/50 text-sm"
+                className="w-full mt-4 py-3 text-white/50 text-sm lg:text-base hover:text-white/70 transition-colors"
               >
                 Voir plus de semaines ↓
               </button>
               
-              <div id="all-weeks" className="hidden space-y-2 mt-2">
+              <div id="all-weeks" className="hidden grid lg:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
                 {generateWeeks().slice(6).map((week) => {
                   const weekData = weekAvailability.find(w => w.week_start_date === week.weekStartStr);
                   const isOpen = weekData?.is_open !== false;
@@ -977,20 +1004,23 @@ export default function AdminPage() {
                   return (
                     <div
                       key={week.weekStartStr}
-                      className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+                      className={`flex items-center justify-between p-4 lg:p-6 rounded-xl border-2 transition-all ${
                         isOpen ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'
                       }`}
                     >
                       <div>
-                        <div className="text-white font-black text-sm">
+                        <div className="text-white font-black text-sm lg:text-lg">
                           {week.weekStart.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} - {week.weekEnd.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                        </div>
+                        <div className="text-white/40 text-xs lg:text-sm">
+                          Semaine du {week.weekStart.toLocaleDateString('fr-FR', { weekday: 'long' })}
                         </div>
                       </div>
                       <button
                         onClick={() => handleToggleWeek(week.weekStartStr, isOpen)}
                         disabled={isUpdating}
-                        className={`px-4 py-2 rounded-lg font-black text-sm ${
-                          isOpen ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                        className={`px-4 lg:px-6 py-2 lg:py-3 rounded-lg font-black text-sm lg:text-base cursor-pointer hover:opacity-80 transition-all ${
+                          isOpen ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-red-500 text-white hover:bg-red-600'
                         } disabled:opacity-50`}
                       >
                         {isUpdating ? '...' : isOpen ? 'OUVERT' : 'FERMÉ'}
@@ -1002,15 +1032,15 @@ export default function AdminPage() {
             </div>
 
             {/* Block Specific Slots */}
-            <div className="pt-6 border-t border-white/10">
-              <div className="flex items-center justify-between mb-4">
+            <div className="pt-8 border-t border-white/10">
+              <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-xl font-black text-white">Bloquer créneaux</h2>
-                  <p className="text-white/50 text-sm">Bloquer des heures spécifiques</p>
+                  <h2 className="text-xl lg:text-2xl font-black text-white">Bloquer créneaux</h2>
+                  <p className="text-white/50 text-sm lg:text-base mt-1">Bloquer des heures spécifiques pour maintenance, etc.</p>
                 </div>
                 <button
                   onClick={() => setShowBlockForm(!showBlockForm)}
-                  className="px-4 py-2 bg-red-600 text-white text-sm font-black rounded-lg"
+                  className="px-4 lg:px-6 py-2 lg:py-3 bg-red-600 text-white text-sm lg:text-base font-black rounded-lg hover:bg-red-700 transition-colors"
                 >
                   + Bloquer
                 </button>
