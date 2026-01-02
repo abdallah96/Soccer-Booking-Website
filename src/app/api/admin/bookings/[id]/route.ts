@@ -31,7 +31,6 @@ async function handlePut(
 
     const { data: booking, error } = await supabase
       .from('bookings')
-      // @ts-expect-error - Service role client types
       .update({ status })
       .eq('id', sanitizedBookingId)
       .select()

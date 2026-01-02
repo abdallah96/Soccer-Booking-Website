@@ -53,3 +53,26 @@ export interface BookingWithField extends Booking {
   field?: Field;
   user?: User;
 }
+
+export interface Review {
+  id: string;
+  field_id: string;
+  user_id: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+  updated_at: string;
+  user?: User;
+}
+
+export interface BlockedSlot {
+  id: string;
+  field_id: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  full_day: boolean;
+  reason?: string;
+  created_by?: string;
+  created_at: string;
+}

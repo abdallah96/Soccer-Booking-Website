@@ -7,7 +7,6 @@ async function handleGet(request: AuthenticatedRequest) {
     const supabase = getAdminClient();
 
     // Get all bookings
-    // @ts-ignore - Supabase types don't work well with service role client
     const { data: bookings, error: bookingsError } = await supabase
       .from('bookings')
       .select('id, status, amount, field_id, date, created_at');

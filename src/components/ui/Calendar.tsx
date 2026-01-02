@@ -7,9 +7,10 @@ interface CalendarProps {
   onDateSelect: (date: string) => void;
   minDate?: string;
   maxDate?: string;
+  isDateAvailable?: (date: Date) => boolean;
 }
 
-export function Calendar({ selectedDate, onDateSelect, minDate, maxDate }: CalendarProps) {
+export function Calendar({ selectedDate, onDateSelect, minDate, maxDate, isDateAvailable }: CalendarProps) {
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(
     selectedDate ? new Date(selectedDate) : today
@@ -54,6 +55,9 @@ export function Calendar({ selectedDate, onDateSelect, minDate, maxDate }: Calen
     // Disable past dates
     const todayStr = today.toISOString().split('T')[0];
     if (dateStr < todayStr) return true;
+
+    // Check if date is in an open week (if availability checker provided)
+    if (isDateAvailable && !isDateAvailable(date)) return true;
 
     return false;
   };
@@ -131,7 +135,7 @@ export function Calendar({ selectedDate, onDateSelect, minDate, maxDate }: Calen
                 ${disabled 
                   ? 'text-white/20 cursor-not-allowed' 
                   : selected
-                  ? 'bg-emerald-500 text-black font-black border-2 border-emerald-400'
+                  ? 'bg-red-500 text-white font-black border-2 border-red-400'
                   : todayDate
                   ? 'bg-white/10 text-white border-2 border-white/30 hover:bg-white/20'
                   : 'text-white/60 hover:bg-white/10 hover:text-white border-2 border-transparent'

@@ -13,7 +13,6 @@ async function handleGet(
     const { id } = await params;
     const supabase = getAdminClient();
 
-    // @ts-ignore - Supabase types don't work well with service role client
     const { data: field, error } = await supabase
       .from('fields')
       .select('*')
@@ -95,7 +94,6 @@ async function handlePut(
     const supabase = getAdminClient();
 
     // Check if field exists
-    // @ts-ignore - Supabase types don't work well with service role client
     const { data: existingFieldData, error: fetchError } = await supabase
       .from('fields')
       .select('id, name')
@@ -113,7 +111,6 @@ async function handlePut(
 
     // Check if another field with same name exists (excluding current field)
     if (sanitizedName !== existingField.name) {
-      // @ts-ignore - Supabase types don't work well with service role client
       const { data: duplicateField } = await supabase
         .from('fields')
         .select('id')
@@ -161,7 +158,6 @@ async function handlePut(
       updateData.images = sanitizedImages;
     }
 
-    // @ts-ignore - Supabase types don't work well with service role client
     const { data: field, error } = await supabase
       .from('fields')
       // @ts-ignore
@@ -209,7 +205,6 @@ async function handleDelete(
     const supabase = getAdminClient();
 
     // Check if field exists
-    // @ts-ignore - Supabase types don't work well with service role client
     const { data: existingField } = await supabase
       .from('fields')
       .select('id')
@@ -224,7 +219,6 @@ async function handleDelete(
     }
 
     // Check if field has bookings
-    // @ts-ignore - Supabase types don't work well with service role client
     const { data: bookings } = await supabase
       .from('bookings')
       .select('id')
@@ -239,7 +233,6 @@ async function handleDelete(
     }
 
     // Delete field
-    // @ts-ignore - Supabase types don't work well with service role client
     const { error } = await supabase
       .from('fields')
       .delete()

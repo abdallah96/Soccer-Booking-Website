@@ -8,7 +8,6 @@ async function handleGet(request: AuthenticatedRequest) {
   try {
     const supabase = getAdminClient();
 
-    // @ts-ignore - Supabase types don't work well with service role client
     const { data: fields, error } = await supabase
       .from('fields')
       .select('*')
@@ -86,7 +85,6 @@ async function handlePost(request: AuthenticatedRequest) {
     const supabase = getAdminClient();
 
     // Check if field with same name already exists
-    // @ts-ignore - Supabase types don't work well with service role client
     const { data: existingField } = await supabase
       .from('fields')
       .select('id')
@@ -101,7 +99,6 @@ async function handlePost(request: AuthenticatedRequest) {
     }
 
     // Create field
-    // @ts-ignore - Supabase types don't work well with service role client
     const { data: field, error } = await supabase
       .from('fields')
       // @ts-ignore

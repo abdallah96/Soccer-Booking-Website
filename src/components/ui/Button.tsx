@@ -19,10 +19,10 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const baseStyles = 'font-bold rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-md relative overflow-hidden group focus-ring';
     
     const variants = {
-      primary: 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white hover:from-emerald-700 hover:to-emerald-800 shadow-lg hover:shadow-xl hover:shadow-emerald-500/30 transform hover:scale-105 active:scale-95',
-      secondary: 'bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:from-orange-600 hover:to-orange-700 shadow-lg hover:shadow-xl hover:shadow-orange-500/30 transform hover:scale-105 active:scale-95',
+      primary: 'bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 shadow-lg hover:shadow-xl hover:shadow-red-500/30 transform hover:scale-105 active:scale-95',
+      secondary: 'bg-gradient-to-r from-gray-600 to-gray-700 text-white hover:from-gray-700 hover:to-gray-800 shadow-lg hover:shadow-xl hover:shadow-gray-500/30 transform hover:scale-105 active:scale-95',
       danger: 'bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 shadow-lg hover:shadow-xl hover:shadow-red-500/30 transform hover:scale-105 active:scale-95',
-      outline: 'border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-700 hover:text-emerald-700 shadow-sm hover:shadow-md transform hover:scale-105 active:scale-95 bg-white',
+      outline: 'border-2 border-red-600 text-red-600 hover:bg-red-50 hover:border-red-700 hover:text-red-700 shadow-sm hover:shadow-md transform hover:scale-105 active:scale-95 bg-white',
     };
 
     const sizes = {

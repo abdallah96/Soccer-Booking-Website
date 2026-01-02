@@ -2,11 +2,12 @@
  * Admin Supabase client using service role key
  * Bypasses Row Level Security for admin operations
  */
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { createClient as createSupabaseClient, SupabaseClient } from '@supabase/supabase-js';
+import { Database } from '@/types/database';
 
-let adminClient: ReturnType<typeof createSupabaseClient> | null = null;
+let adminClient: SupabaseClient<Database> | null = null;
 
-export function getAdminClient() {
+export function getAdminClient(): SupabaseClient<Database> {
   if (!adminClient) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -15,7 +16,7 @@ export function getAdminClient() {
       throw new Error('Missing Supabase admin credentials');
     }
 
-    adminClient = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
+    adminClient = createSupabaseClient<Database>(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false,

@@ -34,7 +34,6 @@ async function handlePut(request: AuthenticatedRequest) {
     const supabase = getAdminClient();
 
     // Verify user exists
-    // @ts-ignore - Supabase types don't work well with service role client
     const { data: user } = await supabase
       .from('users')
       .select('role')
@@ -52,7 +51,6 @@ async function handlePut(request: AuthenticatedRequest) {
 
     const { error } = await supabase
       .from('users')
-      // @ts-expect-error - Service role client types
       .update({ password_hash: hashedPassword })
       .eq('id', sanitizedUserId);
 

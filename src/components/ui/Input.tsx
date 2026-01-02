@@ -22,8 +22,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
               w-full px-4 py-3 border-2
               focus:outline-none focus:ring-2 transition-all duration-200
               ${error 
-                ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/30 bg-black/50 text-white' 
-                : 'border-white/20 focus:border-emerald-500 focus:ring-emerald-500/30 bg-black/50 text-white hover:border-white/30'
+                ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/30 bg-gray-800/50 text-white' 
+                : 'border-white/20 focus:border-red-500 focus:ring-red-500/30 bg-gray-800/50 text-white hover:border-white/30'
               }
               placeholder:text-white/40 font-light
               ${className || ''}

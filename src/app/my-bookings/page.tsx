@@ -34,14 +34,13 @@ export default function MyBookingsPage() {
     setIsLoading(true);
     try {
       const response = await fetch('/api/bookings', {
-        credentials: 'include', // Include cookies
+        credentials: 'include',
       });
       if (response.ok) {
         const data = await response.json();
         setBookings(data.bookings || []);
       } else {
         if (response.status === 401) {
-          // Not authenticated, redirect to login
           router.push('/auth/login');
         } else {
           toast.error('Erreur lors du chargement des réservations');
@@ -64,7 +63,7 @@ export default function MyBookingsPage() {
     try {
       const response = await fetch(`/api/bookings/${bookingId}/cancel`, {
         method: 'POST',
-        credentials: 'include', // Include cookies
+        credentials: 'include',
       });
 
       const result = await response.json();
@@ -86,7 +85,7 @@ export default function MyBookingsPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed':
-        return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+        return 'bg-green-500/20 text-green-400 border-green-500/30';
       case 'pending':
         return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
       case 'cancelled':
@@ -138,14 +137,14 @@ export default function MyBookingsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <LoadingSpinner />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black py-16 md:py-20 px-6 sm:px-8 lg:px-12">
+    <div className="min-h-screen bg-gray-900 py-16 md:py-20 px-6 sm:px-8 lg:px-12">
       <div className="max-w-6xl mx-auto">
         <div className="mb-12 text-center">
           <h1 className="text-5xl sm:text-6xl font-black text-white mb-4">
@@ -166,8 +165,8 @@ export default function MyBookingsPage() {
               Vous n'avez pas encore de réservations. Commencez à réserver un terrain maintenant !
             </p>
             <Link href="/fields">
-              <button className="px-8 py-4 bg-emerald-500 text-black font-black hover:bg-emerald-400 transition-colors rounded-lg">
-                PARCOURIR LES TERRAINS
+              <button className="px-8 py-4 bg-red-600 text-white font-black hover:bg-red-700 transition-colors rounded-lg">
+                RÉSERVER MAINTENANT
               </button>
             </Link>
           </div>
@@ -217,7 +216,7 @@ export default function MyBookingsPage() {
                       </div>
                       <div>
                         <p className="text-white/40 text-sm font-light mb-1">Montant</p>
-                        <p className="text-emerald-400 font-black text-xl">
+                        <p className="text-red-500 font-black text-xl">
                           {formatPrice(booking.amount)}
                         </p>
                       </div>

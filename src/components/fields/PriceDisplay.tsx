@@ -20,7 +20,7 @@ export function PriceDisplay({
 
   if (variant === 'inline') {
     return (
-      <span className="text-emerald-400 font-black">
+      <span className="text-red-500 font-black">
         {dayPrice.toLocaleString()} <span className="text-xs text-white/40 font-mono">FCFA/h</span>
       </span>
     );
@@ -29,7 +29,7 @@ export function PriceDisplay({
   if (variant === 'compact') {
     return (
       <div className="text-right">
-        <div className="text-emerald-400 font-black text-lg">{dayPrice.toLocaleString()}</div>
+        <div className="text-red-500 font-black text-lg">{dayPrice.toLocaleString()}</div>
         <div className="text-white/40 text-xs font-mono">FCFA/h</div>
       </div>
     );
@@ -42,17 +42,16 @@ export function PriceDisplay({
       )}
       <div className="flex items-center justify-between">
         <span className="text-white/60 font-light">Jour (8h-18h)</span>
-        <span className="text-2xl font-black text-emerald-400">
+        <span className="text-2xl font-black text-red-500">
           {dayPrice.toLocaleString()} <span className="text-xs text-white/40 font-mono">FCFA/h</span>
         </span>
       </div>
       <div className="flex items-center justify-between">
         <span className="text-white/60 font-light">Nuit (19h-2h)</span>
-        <span className="text-2xl font-black text-blue-400">
+        <span className="text-2xl font-black text-gray-400">
           {nightPrice.toLocaleString()} <span className="text-xs text-white/40 font-mono">FCFA/h</span>
         </span>
       </div>
     </div>
   );
 }
-

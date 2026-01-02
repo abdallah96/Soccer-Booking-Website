@@ -56,7 +56,6 @@ async function handlePost(request: AuthenticatedRequest) {
     }
 
     // Check if user exists
-    // @ts-ignore - Supabase types don't work well with service role client
     const { data: existingUser } = await supabase
       .from('users')
       .select('id')
@@ -76,7 +75,6 @@ async function handlePost(request: AuthenticatedRequest) {
     // Create user
     const { data: user, error } = await supabase
       .from('users')
-      // @ts-expect-error - Service role client types
       .insert({
         email: sanitizedEmail,
         name: sanitizedName,
