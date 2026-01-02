@@ -209,15 +209,24 @@ export default function FieldDetailPage() {
 
   // Check if a date is in an open week
   const isDateInOpenWeek = (date: Date): boolean => {
-    if (openWeeks.size === 0) return true; // Default to open if no data yet
+    // Default to open if no weeks data has been loaded yet
+    // This prevents blocking all dates before the API responds
+    if (openWeeks.size === 0) return true;
     
     // Get Monday of the week for this date (same logic as API)
     const getMonday = (d: Date) => {
-      const day = d.getDay();
-      const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
-      const monday = new Date(d);
-      monday.setDate(diff);
-      return monday.toISOString().split('T')[0];
+      // Use local date to avoid timezone issues
+      const year = d.getFullYear();
+      const month = d.getMonth();
+      const day = d.getDate();
+      const dayOfWeek = d.getDay();
+      const diff = day - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Adjust when day is Sunday
+      const monday = new Date(year, month, diff);
+      // Format as YYYY-MM-DD
+      const yyyy = monday.getFullYear();
+      const mm = String(monday.getMonth() + 1).padStart(2, '0');
+      const dd = String(monday.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
     };
     
     const weekStart = getMonday(date);

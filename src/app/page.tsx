@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { PriceDisplay } from '@/components/fields/PriceDisplay';
@@ -9,13 +9,45 @@ import { useAuthStore } from '@/lib/stores/authStore';
 import { trackPageView, trackAction } from '@/lib/utils/analytics';
 import { PRICING, FIELD_CONFIG } from '@/lib/config/constants';
 
+interface Review {
+  id: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+  user?: { name: string };
+}
+
 export default function Home() {
   const { user } = useAuthStore();
   const { fields, isLoading: isLoadingFields } = useFields();
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [averageRating, setAverageRating] = useState(0);
 
   useEffect(() => {
     trackPageView('home');
+    fetchReviews();
   }, []);
+
+  const fetchReviews = async () => {
+    try {
+      // Get the first field and fetch its reviews
+      const fieldsResponse = await fetch('/api/fields');
+      if (fieldsResponse.ok) {
+        const fieldsData = await fieldsResponse.json();
+        if (fieldsData.fields && fieldsData.fields.length > 0) {
+          const fieldId = fieldsData.fields[0].id;
+          const reviewsResponse = await fetch(`/api/reviews?field_id=${fieldId}`);
+          if (reviewsResponse.ok) {
+            const reviewsData = await reviewsResponse.json();
+            setReviews(reviewsData.reviews || []);
+            setAverageRating(reviewsData.averageRating || 0);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch reviews:', error);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden bg-white">
@@ -446,6 +478,82 @@ export default function Home() {
           )}
         </div>
       </section>
+
+      {/* Reviews Section */}
+      {reviews.length > 0 && (
+        <section className="relative py-24 md:py-32 px-6 sm:px-8 lg:px-12 bg-white">
+          <div className="max-w-[1600px] mx-auto">
+            <div className="mb-16 text-center">
+              <div className="inline-block mb-6">
+                <span className="text-gray-400 text-sm font-mono tracking-[0.3em] uppercase">TÉMOIGNAGES</span>
+              </div>
+              <h2 className="text-5xl sm:text-6xl font-black leading-tight mb-6 text-gray-900">
+                CE QUE DISENT <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-700">NOS JOUEURS</span>
+              </h2>
+              <div className="flex items-center justify-center gap-4">
+                <div className="flex">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <span
+                      key={star}
+                      className={`text-3xl ${averageRating >= star ? 'text-yellow-400' : 'text-gray-300'}`}
+                    >
+                      ★
+                    </span>
+                  ))}
+                </div>
+                <span className="text-2xl font-black text-gray-900">{averageRating.toFixed(1)}</span>
+                <span className="text-gray-500">({reviews.length} avis)</span>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {reviews.slice(0, 6).map((review) => (
+                <div
+                  key={review.id}
+                  className="bg-gray-50 border border-gray-200 rounded-2xl p-6 hover:shadow-lg transition-shadow"
+                >
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 bg-red-600 text-white rounded-full flex items-center justify-center text-lg font-black">
+                      {review.user?.name?.charAt(0)?.toUpperCase() || '?'}
+                    </div>
+                    <div>
+                      <div className="font-black text-gray-900">{review.user?.name || 'Anonyme'}</div>
+                      <div className="text-gray-400 text-sm">
+                        {new Date(review.created_at).toLocaleDateString('fr-FR', {
+                          month: 'short',
+                          year: 'numeric'
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex mb-3">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <span
+                        key={star}
+                        className={`text-lg ${review.rating >= star ? 'text-yellow-400' : 'text-gray-300'}`}
+                      >
+                        ★
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-gray-700 leading-relaxed">{review.comment}</p>
+                </div>
+              ))}
+            </div>
+
+            {reviews.length > 6 && (
+              <div className="text-center mt-12">
+                <Link
+                  href="/fields"
+                  className="inline-block px-8 py-4 bg-gray-900 text-white font-black rounded-xl hover:bg-gray-800 transition-colors"
+                >
+                  VOIR TOUS LES AVIS →
+                </Link>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       <section className="relative py-24 md:py-32 px-6 sm:px-8 lg:px-12 bg-gradient-to-br from-red-600 to-red-800 overflow-hidden">
         <div className="absolute inset-0">

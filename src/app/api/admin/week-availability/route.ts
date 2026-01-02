@@ -2,12 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { verifyAuth } from '@/lib/middleware/auth';
 
-// Helper to get Monday of a given week
-function getWeekStart(date: Date): Date {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
-  return new Date(d.setDate(diff));
+// Helper to get Monday of a given week (returns YYYY-MM-DD string)
+function getWeekStartString(date: Date): string {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const day = date.getDate();
+  const dayOfWeek = date.getDay();
+  const diff = day - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Adjust when day is Sunday
+  const monday = new Date(year, month, diff);
+  const yyyy = monday.getFullYear();
+  const mm = String(monday.getMonth() + 1).padStart(2, '0');
+  const dd = String(monday.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 export async function GET(request: NextRequest) {
@@ -33,8 +39,8 @@ export async function GET(request: NextRequest) {
       .from('week_availability')
       .select('*')
       .eq('field_id', fieldId)
-      .gte('week_start_date', getWeekStart(today).toISOString().split('T')[0])
-      .lte('week_start_date', getWeekStart(twelveWeeksLater).toISOString().split('T')[0])
+      .gte('week_start_date', getWeekStartString(today))
+      .lte('week_start_date', getWeekStartString(twelveWeeksLater))
       .order('week_start_date', { ascending: true });
 
     if (error) {
@@ -78,13 +84,13 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = getAdminClient();
-    const weekStart = getWeekStart(new Date(week_start_date));
+    const weekStart = getWeekStartString(new Date(week_start_date));
 
     const { data: week, error } = await supabase
       .from('week_availability')
       .upsert({
         field_id,
-        week_start_date: weekStart.toISOString().split('T')[0],
+        week_start_date: weekStart,
         is_open: is_open !== undefined ? is_open : true,
         created_by: user.userId,
         updated_at: new Date().toISOString(),

@@ -7,16 +7,19 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Field } from '@/types';
 import toast from 'react-hot-toast';
 
+type ActiveSection = 'dashboard' | 'bookings' | 'availability' | 'fields' | 'settings';
+
 export default function AdminPage() {
   const router = useRouter();
   const { user } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
   const [bookings, setBookings] = useState<any[]>([]);
   const [fields, setFields] = useState<Field[]>([]);
-  const [activeTab, setActiveTab] = useState<'bookings' | 'fields' | 'availability' | 'create-booking' | 'weeks'>('bookings');
+  const [activeSection, setActiveSection] = useState<ActiveSection>('dashboard');
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [showCreateAdminForm, setShowCreateAdminForm] = useState(false);
   const [showFieldForm, setShowFieldForm] = useState(false);
+  const [showManualBooking, setShowManualBooking] = useState(false);
   const [editingField, setEditingField] = useState<Field | null>(null);
   const [newPassword, setNewPassword] = useState('');
   const [adminData, setAdminData] = useState({ email: '', name: '', password: '' });
@@ -37,6 +40,7 @@ export default function AdminPage() {
   const [savingField, setSavingField] = useState(false);
   const [deletingField, setDeletingField] = useState<string | null>(null);
   const [stats, setStats] = useState<any>(null);
+  const [showStats, setShowStats] = useState(false);
   
   // Availability blocking state
   const [blockedSlots, setBlockedSlots] = useState<any[]>([]);
@@ -50,8 +54,9 @@ export default function AdminPage() {
   // Week availability state
   const [weekAvailability, setWeekAvailability] = useState<any[]>([]);
   const [updatingWeek, setUpdatingWeek] = useState<string | null>(null);
+  const [showBlockForm, setShowBlockForm] = useState(false);
 
-  // Manual booking state (for phone reservations)
+  // Manual booking state
   const [manualBooking, setManualBooking] = useState({
     user_name: '',
     user_email: '',
@@ -80,8 +85,13 @@ export default function AdminPage() {
     fetchFields();
     fetchStats();
     fetchBlockedSlots();
-    fetchWeekAvailability();
   }, [user, router]);
+
+  useEffect(() => {
+    if (fields.length > 0) {
+      fetchWeekAvailability();
+    }
+  }, [fields]);
 
   const fetchBookings = async () => {
     try {
@@ -91,9 +101,6 @@ export default function AdminPage() {
       if (response.ok) {
         const data = await response.json();
         setBookings(data.bookings || []);
-      } else if (response.status === 401 || response.status === 403) {
-        toast.error('Accès refusé. Admin uniquement.');
-        router.push('/');
       }
     } catch (error) {
       console.error('Failed to fetch bookings:', error);
@@ -108,9 +115,6 @@ export default function AdminPage() {
       if (response.ok) {
         const data = await response.json();
         setFields(data.fields || []);
-      } else if (response.status === 401 || response.status === 403) {
-        toast.error('Accès refusé. Admin uniquement.');
-        router.push('/');
       }
     } catch (error) {
       console.error('Failed to fetch fields:', error);
@@ -125,9 +129,6 @@ export default function AdminPage() {
       if (response.ok) {
         const data = await response.json();
         setStats(data);
-      } else if (response.status === 401 || response.status === 403) {
-        toast.error('Accès refusé. Admin uniquement.');
-        router.push('/');
       }
     } catch (error) {
       console.error('Failed to fetch stats:', error);
@@ -149,11 +150,7 @@ export default function AdminPage() {
   };
 
   const fetchWeekAvailability = async () => {
-    if (!fields || fields.length === 0) {
-      // Wait for fields to load
-      setTimeout(fetchWeekAvailability, 500);
-      return;
-    }
+    if (!fields || fields.length === 0) return;
     try {
       const response = await fetch(`/api/admin/week-availability?field_id=${fields[0].id}`, {
         credentials: 'include',
@@ -196,12 +193,10 @@ export default function AdminPage() {
     }
   };
 
-  // Generate list of weeks (next 12 weeks) - Monday to Sunday
   const generateWeeks = () => {
     const weeks: { weekStart: Date; weekEnd: Date; weekStartStr: string }[] = [];
     const today = new Date();
     
-    // Get Monday of current week
     const getMonday = (date: Date) => {
       const d = new Date(date);
       const day = d.getDay();
@@ -242,16 +237,15 @@ export default function AdminPage() {
         body: JSON.stringify({ password: newPassword, user_id: user?.id }),
       });
 
-      const result = await response.json();
       if (response.ok) {
-        toast.success('Mot de passe mis à jour avec succès');
+        toast.success('Mot de passe mis à jour');
         setNewPassword('');
         setShowPasswordForm(false);
       } else {
-        toast.error(result.error || 'Erreur lors de la mise à jour');
+        toast.error('Erreur lors de la mise à jour');
       }
     } catch (error) {
-      toast.error('Erreur lors de la mise à jour du mot de passe');
+      toast.error('Erreur lors de la mise à jour');
     }
   };
 
@@ -259,11 +253,6 @@ export default function AdminPage() {
     e.preventDefault();
     if (!adminData.email || !adminData.name || !adminData.password) {
       toast.error('Tous les champs sont requis');
-      return;
-    }
-
-    if (adminData.password.length < 6) {
-      toast.error('Le mot de passe doit contenir au moins 6 caractères');
       return;
     }
 
@@ -280,16 +269,15 @@ export default function AdminPage() {
         }),
       });
 
-      const result = await response.json();
       if (response.ok) {
         toast.success('Admin créé avec succès');
         setAdminData({ email: '', name: '', password: '' });
         setShowCreateAdminForm(false);
       } else {
-        toast.error(result.error || 'Erreur lors de la création');
+        toast.error('Erreur lors de la création');
       }
     } catch (error) {
-      toast.error('Erreur lors de la création de l\'admin');
+      toast.error('Erreur lors de la création');
     }
   };
 
@@ -303,13 +291,12 @@ export default function AdminPage() {
         body: JSON.stringify({ status }),
       });
 
-      const result = await response.json();
       if (response.ok) {
         toast.success(status === 'confirmed' ? 'Réservation confirmée' : 'Réservation annulée');
         fetchBookings();
         fetchStats();
       } else {
-        toast.error(result.error || 'Erreur lors de la mise à jour');
+        toast.error('Erreur lors de la mise à jour');
       }
     } catch (error) {
       toast.error('Erreur lors de la mise à jour');
@@ -346,16 +333,15 @@ export default function AdminPage() {
         body: JSON.stringify(payload),
       });
 
-      const result = await response.json();
       if (response.ok) {
-        toast.success(editingField ? 'Terrain mis à jour' : 'Terrain créé avec succès');
+        toast.success(editingField ? 'Terrain mis à jour' : 'Terrain créé');
         setShowFieldForm(false);
         setEditingField(null);
         resetFieldForm();
         fetchFields();
         fetchStats();
       } else {
-        toast.error(result.error || 'Erreur lors de la sauvegarde');
+        toast.error('Erreur lors de la sauvegarde');
       }
     } catch (error) {
       toast.error('Erreur lors de la sauvegarde');
@@ -380,9 +366,7 @@ export default function AdminPage() {
   };
 
   const handleDeleteField = async (fieldId: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce terrain ?')) {
-      return;
-    }
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce terrain ?')) return;
 
     setDeletingField(fieldId);
     try {
@@ -391,13 +375,12 @@ export default function AdminPage() {
         credentials: 'include',
       });
 
-      const result = await response.json();
       if (response.ok) {
-        toast.success('Terrain supprimé avec succès');
+        toast.success('Terrain supprimé');
         fetchFields();
         fetchStats();
       } else {
-        toast.error(result.error || 'Erreur lors de la suppression');
+        toast.error('Erreur lors de la suppression');
       }
     } catch (error) {
       toast.error('Erreur lors de la suppression');
@@ -454,13 +437,12 @@ export default function AdminPage() {
 
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
-      toast.error('Type de fichier non autorisé. Utilisez JPEG, PNG ou WebP.');
+      toast.error('Type de fichier non autorisé');
       return;
     }
 
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast.error('Le fichier est trop volumineux. Taille maximale: 5MB');
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Fichier trop volumineux (max 5MB)');
       return;
     }
 
@@ -481,13 +463,12 @@ export default function AdminPage() {
           ...fieldData,
           images: [...fieldData.images, result.url],
         });
-        toast.success('Image uploadée avec succès');
+        toast.success('Image uploadée');
       } else {
-        toast.error(result.error || 'Erreur lors de l\'upload');
+        toast.error('Erreur lors de l\'upload');
       }
     } catch (error) {
-      console.error('Upload error:', error);
-      toast.error('Erreur lors de l\'upload du fichier');
+      toast.error('Erreur lors de l\'upload');
     } finally {
       setUploadingImage(false);
       e.target.value = '';
@@ -509,7 +490,7 @@ export default function AdminPage() {
     }
 
     if (!blockFullDay && (!blockStartTime || !blockEndTime)) {
-      toast.error('Veuillez sélectionner les heures de début et fin');
+      toast.error('Veuillez sélectionner les heures');
       return;
     }
 
@@ -529,17 +510,17 @@ export default function AdminPage() {
         }),
       });
 
-      const result = await response.json();
       if (response.ok) {
-        toast.success('Créneau bloqué avec succès');
+        toast.success('Créneau bloqué');
         setBlockDate('');
         setBlockStartTime('');
         setBlockEndTime('');
         setBlockReason('');
         setBlockFullDay(false);
+        setShowBlockForm(false);
         fetchBlockedSlots();
       } else {
-        toast.error(result.error || 'Erreur lors du blocage');
+        toast.error('Erreur lors du blocage');
       }
     } catch (error) {
       toast.error('Erreur lors du blocage');
@@ -559,10 +540,10 @@ export default function AdminPage() {
         toast.success('Blocage supprimé');
         fetchBlockedSlots();
       } else {
-        toast.error('Erreur lors de la suppression');
+        toast.error('Erreur');
       }
     } catch (error) {
-      toast.error('Erreur lors de la suppression');
+      toast.error('Erreur');
     }
   };
 
@@ -581,7 +562,6 @@ export default function AdminPage() {
 
     setCreatingBooking(true);
     try {
-      // First, try to find existing user by email
       let userId;
       const findUserResponse = await fetch(`/api/users?email=${encodeURIComponent(manualBooking.user_email)}`, {
         credentials: 'include',
@@ -592,9 +572,7 @@ export default function AdminPage() {
         userId = userData.user?.id;
       }
 
-      // If user doesn't exist, create one with a temporary password
       if (!userId) {
-        // Generate a random password for phone bookings
         const tempPassword = Math.random().toString(36).slice(-12) + 'A1!';
         const userResponse = await fetch('/api/admin/users', {
           method: 'POST',
@@ -611,18 +589,11 @@ export default function AdminPage() {
         if (userResponse.ok) {
           const userData = await userResponse.json();
           userId = userData.user.id;
-          
-          // Update phone if provided
-          if (manualBooking.user_phone) {
-            // Phone update can be done later or we can add it to the user creation
-          }
         } else {
-          const errorData = await userResponse.json();
-          throw new Error(errorData.error || 'Impossible de créer l\'utilisateur');
+          throw new Error('Impossible de créer l\'utilisateur');
         }
       }
 
-      // Create the booking
       const bookingResponse = await fetch('/api/admin/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -634,13 +605,12 @@ export default function AdminPage() {
           start_time: manualBooking.start_time,
           duration: manualBooking.duration,
           payment_method: manualBooking.payment_method,
-          status: 'confirmed', // Auto-confirm manual bookings
+          status: 'confirmed',
         }),
       });
 
-      const bookingData = await bookingResponse.json();
       if (bookingResponse.ok) {
-        toast.success('Réservation créée avec succès');
+        toast.success('Réservation créée');
         setManualBooking({
           user_name: '',
           user_email: '',
@@ -650,813 +620,730 @@ export default function AdminPage() {
           duration: 60,
           payment_method: 'cash',
         });
+        setShowManualBooking(false);
         fetchBookings();
-        setActiveTab('bookings');
       } else {
-        toast.error(bookingData.error || 'Erreur lors de la création');
+        toast.error('Erreur lors de la création');
       }
     } catch (error) {
-      toast.error('Erreur lors de la création de la réservation');
+      toast.error('Erreur lors de la création');
     } finally {
       setCreatingBooking(false);
     }
   };
 
-  // Get min date (today) and max date (6 months ahead for admin flexibility)
-  const getMinDate = () => {
-    return new Date().toISOString().split('T')[0];
+  const getMinDate = () => new Date().toISOString().split('T')[0];
+  const getMaxDate = () => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + 6);
+    return d.toISOString().split('T')[0];
   };
 
-  const getMaxDate = () => {
-    const today = new Date();
-    const sixMonthsLater = new Date(today);
-    sixMonthsLater.setMonth(today.getMonth() + 6);
-    return sixMonthsLater.toISOString().split('T')[0];
-  };
+  const pendingCount = bookings.filter(b => b.status === 'pending').length;
 
   if (isLoading) {
     return <LoadingSpinner message="Chargement..." />;
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 py-12 md:py-20 px-6 sm:px-8 lg:px-12">
-      <div className="max-w-6xl mx-auto text-white">
-        <div className="mb-8">
-          <h1 className="text-4xl md:text-5xl font-black mb-2">PANEL ADMIN</h1>
-          <p className="text-white/60 font-light">Gestion des réservations, terrains et disponibilités</p>
+    <div className="min-h-screen bg-gray-900">
+      {/* Mobile Header - Fixed */}
+      <div className="sticky top-0 z-50 bg-gray-900/95 backdrop-blur-md border-b border-white/10">
+        <div className="px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-black text-white">ADMIN</h1>
+              <p className="text-xs text-white/50">Bienvenue, {user?.name}</p>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-4 mb-6 border-b border-white/10 overflow-x-auto">
+            {/* Quick stats on mobile */}
+            {pendingCount > 0 && (
           <button
-            onClick={() => setActiveTab('bookings')}
-            className={`px-6 py-3 font-black transition-colors whitespace-nowrap ${
-              activeTab === 'bookings'
-                ? 'text-red-500 border-b-2 border-red-500'
-                : 'text-white/60 hover:text-white'
-            }`}
-          >
-            RÉSERVATIONS
+                onClick={() => setActiveSection('bookings')}
+                className="flex items-center gap-2 px-3 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-lg"
+              >
+                <span className="text-yellow-400 font-black text-lg">{pendingCount}</span>
+                <span className="text-yellow-300 text-xs">en attente</span>
           </button>
-          <button
-            onClick={() => setActiveTab('fields')}
-            className={`px-6 py-3 font-black transition-colors whitespace-nowrap ${
-              activeTab === 'fields'
-                ? 'text-red-500 border-b-2 border-red-500'
-                : 'text-white/60 hover:text-white'
-            }`}
-          >
-            TERRAINS
-          </button>
-          <button
-            onClick={() => setActiveTab('availability')}
-            className={`px-6 py-3 font-black transition-colors whitespace-nowrap ${
-              activeTab === 'availability'
-                ? 'text-red-500 border-b-2 border-red-500'
-                : 'text-white/60 hover:text-white'
-            }`}
-          >
-            DISPONIBILITÉS
-          </button>
-          <button
-            onClick={() => setActiveTab('create-booking')}
-            className={`px-6 py-3 font-black transition-colors whitespace-nowrap ${
-              activeTab === 'create-booking'
-                ? 'text-red-500 border-b-2 border-red-500'
-                : 'text-white/60 hover:text-white'
-            }`}
-          >
-            CRÉER RÉSERVATION
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab('weeks');
-              fetchWeekAvailability();
-            }}
-            className={`px-6 py-3 font-black transition-colors whitespace-nowrap ${
-              activeTab === 'weeks'
-                ? 'text-red-500 border-b-2 border-red-500'
-                : 'text-white/60 hover:text-white'
-            }`}
-          >
-            SEMAINES
-          </button>
+            )}
+          </div>
         </div>
 
-        {/* Statistics Cards */}
-        {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl">
-              <div className="text-3xl font-black text-red-500 mb-2">
-                {stats.stats?.total_bookings || 0}
-              </div>
-              <div className="text-sm text-white/60 font-light">Total Réservations</div>
-            </div>
-            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl">
-              <div className="text-3xl font-black text-yellow-400 mb-2">
-                {stats.stats?.pending_bookings || 0}
-              </div>
-              <div className="text-sm text-white/60 font-light">En Attente</div>
-            </div>
-            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl">
-              <div className="text-3xl font-black text-green-500 mb-2">
-                {stats.stats?.confirmed_bookings || 0}
-              </div>
-              <div className="text-sm text-white/60 font-light">Confirmées</div>
-            </div>
-            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl">
-              <div className="text-2xl font-black text-red-500 mb-2">
-                {new Intl.NumberFormat('fr-FR', {
-                  style: 'currency',
-                  currency: 'XOF',
-                  minimumFractionDigits: 0,
-                }).format(stats.stats?.total_revenue || 0)}
-              </div>
-              <div className="text-sm text-white/60 font-light">Revenus Total</div>
-            </div>
-          </div>
-        )}
-
-        {/* Additional Stats Row */}
-        {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl">
-              <div className="text-2xl font-black text-red-500 mb-2">
-                {new Intl.NumberFormat('fr-FR', {
-                  style: 'currency',
-                  currency: 'XOF',
-                  minimumFractionDigits: 0,
-                }).format(stats.stats?.revenue_last_30_days || 0)}
-              </div>
-              <div className="text-sm text-white/60 font-light">Revenus (30 derniers jours)</div>
-            </div>
-            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl">
-              <div className="text-3xl font-black text-red-500 mb-2">
-                {stats.stats?.total_fields || 0}
-              </div>
-              <div className="text-sm text-white/60 font-light">Terrains Disponibles</div>
-            </div>
-            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl">
-              <div className="text-3xl font-black text-gray-400 mb-2">
-                {stats.stats?.cancelled_bookings || 0}
-              </div>
-              <div className="text-sm text-white/60 font-light">Annulées</div>
-            </div>
-          </div>
-        )}
-
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
+        {/* Mobile Navigation */}
+        <div className="flex overflow-x-auto no-scrollbar border-t border-white/5">
+          {[
+            { id: 'dashboard', label: '🏠', fullLabel: 'Accueil' },
+            { id: 'bookings', label: '📅', fullLabel: 'Réservations', badge: pendingCount },
+            { id: 'availability', label: '📆', fullLabel: 'Disponibilités' },
+            { id: 'fields', label: '⚽', fullLabel: 'Terrain' },
+            { id: 'settings', label: '⚙️', fullLabel: 'Paramètres' },
+          ].map((item) => (
           <button
-            onClick={() => setShowPasswordForm(!showPasswordForm)}
-            className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl hover:bg-white/10 transition-colors text-left"
-          >
-            <div className="text-lg font-black mb-2">🔒</div>
-            <div className="text-sm font-light">Modifier mot de passe</div>
+              key={item.id}
+              onClick={() => setActiveSection(item.id as ActiveSection)}
+              className={`flex-1 min-w-[70px] flex flex-col items-center py-3 px-2 transition-colors relative ${
+                activeSection === item.id
+                  ? 'text-red-500 bg-red-500/10'
+                  : 'text-white/60'
+              }`}
+            >
+              <span className="text-lg">{item.label}</span>
+              <span className="text-[10px] mt-1">{item.fullLabel}</span>
+              {item.badge ? (
+                <span className="absolute top-1 right-2 w-5 h-5 bg-yellow-500 text-black text-[10px] font-black rounded-full flex items-center justify-center">
+                  {item.badge}
+                </span>
+              ) : null}
           </button>
-          <button
-            onClick={() => setShowCreateAdminForm(!showCreateAdminForm)}
-            className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl hover:bg-white/10 transition-colors text-left"
-          >
-            <div className="text-lg font-black mb-2">➕</div>
-            <div className="text-sm font-light">Créer un admin</div>
-          </button>
+          ))}
+        </div>
         </div>
 
-        {showPasswordForm && (
-          <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl mb-6">
-            <h2 className="text-xl font-black mb-4">Modifier mon mot de passe</h2>
-            <form onSubmit={handleUpdatePassword} className="space-y-4">
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Nouveau mot de passe"
-                className="w-full px-4 py-3 bg-gray-800/50 border-2 border-white/20 text-white focus:outline-none focus:border-red-500"
-              />
-              <div className="flex gap-3">
-                <button
-                  type="submit"
-                  className="px-6 py-3 bg-red-600 text-white font-black hover:bg-red-700 transition-colors"
-                >
-                  Mettre à jour
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowPasswordForm(false);
-                    setNewPassword('');
-                  }}
-                  className="px-6 py-3 bg-white/10 text-white font-black hover:bg-white/20 transition-colors"
-                >
-                  Annuler
-                </button>
+      {/* Main Content */}
+      <div className="px-4 py-6 pb-24 max-w-4xl mx-auto">
+        
+        {/* DASHBOARD */}
+        {activeSection === 'dashboard' && (
+          <div className="space-y-4">
+            {/* Quick Actions */}
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setActiveSection('bookings')}
+                className="bg-gradient-to-br from-yellow-500/20 to-yellow-600/10 border border-yellow-500/30 p-4 rounded-2xl text-left"
+              >
+                <div className="text-3xl font-black text-yellow-400 mb-1">
+                  {pendingCount}
               </div>
-            </form>
+                <div className="text-sm text-yellow-300/80">À confirmer</div>
+              </button>
+              
+              <button
+                onClick={() => setShowManualBooking(true)}
+                className="bg-gradient-to-br from-red-500/20 to-red-600/10 border border-red-500/30 p-4 rounded-2xl text-left"
+              >
+                <div className="text-2xl mb-1">📞</div>
+                <div className="text-sm text-red-300/80">Nouvelle résa</div>
+              </button>
+              
+              <button
+                onClick={() => setActiveSection('availability')}
+                className="bg-gradient-to-br from-green-500/20 to-green-600/10 border border-green-500/30 p-4 rounded-2xl text-left"
+              >
+                <div className="text-2xl mb-1">📆</div>
+                <div className="text-sm text-green-300/80">Semaines</div>
+              </button>
+              
+              <button
+                onClick={() => setShowStats(!showStats)}
+                className="bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/30 p-4 rounded-2xl text-left"
+              >
+                <div className="text-2xl mb-1">📊</div>
+                <div className="text-sm text-blue-300/80">Statistiques</div>
+              </button>
+            </div>
+
+            {/* Expandable Stats */}
+            {showStats && stats && (
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3 animate-fadeIn">
+                <div className="flex justify-between items-center">
+                  <span className="text-white/60 text-sm">Total réservations</span>
+                  <span className="text-white font-black">{stats.stats?.total_bookings || 0}</span>
+              </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-white/60 text-sm">Confirmées</span>
+                  <span className="text-green-400 font-black">{stats.stats?.confirmed_bookings || 0}</span>
+            </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-white/60 text-sm">Revenus total</span>
+                  <span className="text-red-400 font-black">
+                    {new Intl.NumberFormat('fr-FR').format(stats.stats?.total_revenue || 0)} FCFA
+                  </span>
+              </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-white/60 text-sm">30 derniers jours</span>
+                  <span className="text-red-400 font-black">
+                    {new Intl.NumberFormat('fr-FR').format(stats.stats?.revenue_last_30_days || 0)} FCFA
+                  </span>
+            </div>
+              </div>
+            )}
+
+            {/* Recent Pending Bookings */}
+            {pendingCount > 0 && (
+              <div className="space-y-3">
+                <h3 className="text-white font-black">Réservations en attente</h3>
+                {bookings
+                  .filter(b => b.status === 'pending')
+                  .slice(0, 3)
+                  .map((booking) => (
+                    <div
+                      key={booking.id}
+                      className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4"
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <div className="text-white font-black">
+                            {new Date(booking.date).toLocaleDateString('fr-FR', { 
+                              weekday: 'short', 
+                              day: 'numeric', 
+                              month: 'short' 
+                            })}
+            </div>
+                          <div className="text-yellow-300 text-sm">⏰ {booking.time_slot}</div>
+                          <div className="text-white/60 text-xs mt-1">{booking.user?.name || 'N/A'}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-yellow-400 font-black">{booking.amount?.toLocaleString()} FCFA</div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleConfirmBooking(booking.id, 'confirmed')}
+                          disabled={updatingBooking === booking.id}
+                          className="flex-1 py-2 bg-green-600 text-white text-sm font-black rounded-lg disabled:opacity-50"
+                        >
+                          ✓ Confirmer
+                        </button>
+                        <button
+                          onClick={() => handleConfirmBooking(booking.id, 'cancelled')}
+                          disabled={updatingBooking === booking.id}
+                          className="px-4 py-2 bg-red-500/20 text-red-400 text-sm font-black rounded-lg border border-red-500/30"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                {pendingCount > 3 && (
+                  <button
+                    onClick={() => setActiveSection('bookings')}
+                    className="w-full py-3 bg-white/5 text-white/60 text-sm rounded-xl border border-white/10"
+                  >
+                    Voir les {pendingCount - 3} autres →
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
 
-        {showCreateAdminForm && (
-          <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl mb-6">
-            <h2 className="text-xl font-black mb-4">Créer un nouvel administrateur</h2>
-            <form onSubmit={handleCreateAdmin} className="space-y-4">
-              <input
-                type="text"
-                value={adminData.name}
-                onChange={(e) => setAdminData({ ...adminData, name: e.target.value })}
-                placeholder="Nom complet"
-                className="w-full px-4 py-3 bg-gray-800/50 border-2 border-white/20 text-white focus:outline-none focus:border-red-500"
-              />
-              <input
-                type="email"
-                value={adminData.email}
-                onChange={(e) => setAdminData({ ...adminData, email: e.target.value })}
-                placeholder="Email"
-                className="w-full px-4 py-3 bg-gray-800/50 border-2 border-white/20 text-white focus:outline-none focus:border-red-500"
-              />
-              <input
-                type="password"
-                value={adminData.password}
-                onChange={(e) => setAdminData({ ...adminData, password: e.target.value })}
-                placeholder="Mot de passe"
-                className="w-full px-4 py-3 bg-gray-800/50 border-2 border-white/20 text-white focus:outline-none focus:border-red-500"
-              />
-              <div className="flex gap-3">
-                <button
-                  type="submit"
-                  className="px-6 py-3 bg-red-600 text-white font-black hover:bg-red-700 transition-colors"
-                >
-                  Créer admin
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowCreateAdminForm(false);
-                    setAdminData({ email: '', name: '', password: '' });
-                  }}
-                  className="px-6 py-3 bg-white/10 text-white font-black hover:bg-white/20 transition-colors"
-                >
-                  Annuler
-                </button>
+        {/* BOOKINGS */}
+        {activeSection === 'bookings' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-black text-white">Réservations</h2>
+              <button
+                onClick={() => setShowManualBooking(true)}
+                className="px-4 py-2 bg-red-600 text-white text-sm font-black rounded-lg"
+              >
+                + Nouvelle
+              </button>
               </div>
-            </form>
+
+            {bookings.length === 0 ? (
+              <div className="text-center py-12 text-white/40">
+                Aucune réservation
+            </div>
+            ) : (
+              <div className="space-y-3">
+                {bookings.map((booking) => (
+                  <div
+                    key={booking.id}
+                    className={`rounded-xl p-4 border ${
+                      booking.status === 'pending'
+                        ? 'bg-yellow-500/10 border-yellow-500/20'
+                        : booking.status === 'confirmed'
+                        ? 'bg-green-500/10 border-green-500/20'
+                        : 'bg-gray-500/10 border-gray-500/20'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <div className="text-white font-black">
+                          {new Date(booking.date).toLocaleDateString('fr-FR', { 
+                            weekday: 'long', 
+                            day: 'numeric', 
+                            month: 'long' 
+                          })}
+              </div>
+                        <div className="text-white/80 text-sm">⏰ {booking.time_slot}</div>
+                        <div className="text-white/50 text-xs mt-2">
+                          👤 {booking.user?.name || 'N/A'} · {booking.user?.email || ''}
+            </div>
+              </div>
+                      <div className="text-right">
+                        <span className={`px-2 py-1 text-xs font-black rounded ${
+                          booking.status === 'pending'
+                            ? 'bg-yellow-500/20 text-yellow-300'
+                            : booking.status === 'confirmed'
+                            ? 'bg-green-500/20 text-green-300'
+                            : 'bg-gray-500/20 text-gray-300'
+                        }`}>
+                          {booking.status === 'pending' ? 'EN ATTENTE' : 
+                           booking.status === 'confirmed' ? 'CONFIRMÉ' : 'ANNULÉ'}
+                        </span>
+                        <div className="text-white font-black mt-2">{booking.amount?.toLocaleString()} FCFA</div>
+            </div>
+                    </div>
+                    
+                    {booking.status === 'pending' && (
+                      <div className="flex gap-2 mt-3 pt-3 border-t border-white/10">
+                        <button
+                          onClick={() => handleConfirmBooking(booking.id, 'confirmed')}
+                          disabled={updatingBooking === booking.id}
+                          className="flex-1 py-2 bg-green-600 text-white text-sm font-black rounded-lg disabled:opacity-50"
+                        >
+                          ✓ Confirmer
+                        </button>
+                        <button
+                          onClick={() => handleConfirmBooking(booking.id, 'cancelled')}
+                          disabled={updatingBooking === booking.id}
+                          className="flex-1 py-2 bg-red-500/20 text-red-400 text-sm font-black rounded-lg border border-red-500/30"
+                        >
+                          ✕ Annuler
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Availability Management Tab */}
-        {activeTab === 'availability' && (
-          <>
-            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl mb-6">
-              <h2 className="text-2xl font-black mb-6">Bloquer des créneaux</h2>
-              <form onSubmit={handleBlockSlot} className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
+        {/* AVAILABILITY */}
+        {activeSection === 'availability' && (
+          <div className="space-y-6">
+            {/* Week Management */}
+            <div>
+              <h2 className="text-xl font-black text-white mb-4">Semaines ouvertes</h2>
+              <p className="text-white/50 text-sm mb-4">
+                Activez les semaines pour permettre les réservations
+              </p>
+              
+              <div className="space-y-2">
+                {generateWeeks().slice(0, 6).map((week) => {
+                  const weekData = weekAvailability.find(w => w.week_start_date === week.weekStartStr);
+                  const isOpen = weekData?.is_open !== false;
+                  const isUpdating = updatingWeek === week.weekStartStr;
+
+                  return (
+                    <div
+                      key={week.weekStartStr}
+                      className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+                        isOpen ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'
+                      }`}
+                    >
+                      <div>
+                        <div className="text-white font-black text-sm">
+                          {week.weekStart.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} - {week.weekEnd.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                  </div>
+                        <div className="text-white/40 text-xs">
+                          {week.weekStart.toLocaleDateString('fr-FR', { weekday: 'long' }).charAt(0).toUpperCase() + week.weekStart.toLocaleDateString('fr-FR', { weekday: 'long' }).slice(1)}
+                </div>
+                      </div>
+                      <button
+                        onClick={() => handleToggleWeek(week.weekStartStr, isOpen)}
+                        disabled={isUpdating}
+                        className={`px-4 py-2 rounded-lg font-black text-sm transition-all ${
+                          isOpen
+                            ? 'bg-green-500 text-white'
+                            : 'bg-red-500 text-white'
+                        } disabled:opacity-50`}
+                      >
+                        {isUpdating ? '...' : isOpen ? 'OUVERT' : 'FERMÉ'}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+              
+              <button
+                onClick={() => {
+                  const el = document.getElementById('all-weeks');
+                  if (el) el.classList.toggle('hidden');
+                }}
+                className="w-full mt-3 py-2 text-white/50 text-sm"
+              >
+                Voir plus de semaines ↓
+              </button>
+              
+              <div id="all-weeks" className="hidden space-y-2 mt-2">
+                {generateWeeks().slice(6).map((week) => {
+                  const weekData = weekAvailability.find(w => w.week_start_date === week.weekStartStr);
+                  const isOpen = weekData?.is_open !== false;
+                  const isUpdating = updatingWeek === week.weekStartStr;
+
+                  return (
+                    <div
+                      key={week.weekStartStr}
+                      className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+                        isOpen ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'
+                      }`}
+                    >
+                      <div>
+                        <div className="text-white font-black text-sm">
+                          {week.weekStart.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} - {week.weekEnd.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleToggleWeek(week.weekStartStr, isOpen)}
+                        disabled={isUpdating}
+                        className={`px-4 py-2 rounded-lg font-black text-sm ${
+                          isOpen ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                        } disabled:opacity-50`}
+                      >
+                        {isUpdating ? '...' : isOpen ? 'OUVERT' : 'FERMÉ'}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Block Specific Slots */}
+            <div className="pt-6 border-t border-white/10">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-xl font-black text-white">Bloquer créneaux</h2>
+                  <p className="text-white/50 text-sm">Bloquer des heures spécifiques</p>
+                </div>
+                <button
+                  onClick={() => setShowBlockForm(!showBlockForm)}
+                  className="px-4 py-2 bg-red-600 text-white text-sm font-black rounded-lg"
+                >
+                  + Bloquer
+                </button>
+              </div>
+
+              {showBlockForm && (
+                <form onSubmit={handleBlockSlot} className="bg-white/5 border border-white/10 rounded-xl p-4 mb-4 space-y-4">
                   <div>
-                    <label className="block text-sm text-white/60 mb-2">Date *</label>
+                    <label className="text-white/60 text-sm">Date</label>
                     <input
                       type="date"
                       value={blockDate}
                       onChange={(e) => setBlockDate(e.target.value)}
                       min={getMinDate()}
                       max={getMaxDate()}
-                      required
-                      className="w-full px-4 py-3 bg-gray-800/50 border-2 border-white/20 text-white focus:outline-none focus:border-red-500"
+                      className="w-full mt-1 px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
                     />
                   </div>
-                  <div className="flex items-center">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={blockFullDay}
-                        onChange={(e) => setBlockFullDay(e.target.checked)}
-                        className="w-5 h-5 rounded border-2 border-white/20 bg-gray-800/50 text-red-600 focus:ring-red-500"
-                      />
-                      <span className="text-white">Bloquer toute la journée</span>
-                    </label>
-                  </div>
-                </div>
+                  
+                  <label className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={blockFullDay}
+                      onChange={(e) => setBlockFullDay(e.target.checked)}
+                      className="w-5 h-5"
+                    />
+                    <span className="text-white">Toute la journée</span>
+                  </label>
 
-                {!blockFullDay && (
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm text-white/60 mb-2">Heure de début</label>
-                      <select
-                        value={blockStartTime}
-                        onChange={(e) => setBlockStartTime(e.target.value)}
-                        className="w-full px-4 py-3 bg-gray-800/50 border-2 border-white/20 text-white focus:outline-none focus:border-red-500"
-                      >
-                        <option value="">Sélectionner</option>
-                        {['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00', '00:00', '01:00'].map((time) => (
-                          <option key={time} value={time}>{time}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm text-white/60 mb-2">Heure de fin</label>
-                      <select
-                        value={blockEndTime}
-                        onChange={(e) => setBlockEndTime(e.target.value)}
-                        className="w-full px-4 py-3 bg-gray-800/50 border-2 border-white/20 text-white focus:outline-none focus:border-red-500"
-                      >
-                        <option value="">Sélectionner</option>
-                        {['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00', '00:00', '01:00', '02:00'].map((time) => (
-                          <option key={time} value={time}>{time}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                )}
+                  {!blockFullDay && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-white/60 text-sm">Début</label>
+                        <select
+                          value={blockStartTime}
+                          onChange={(e) => setBlockStartTime(e.target.value)}
+                          className="w-full mt-1 px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
+                        >
+                          <option value="">--</option>
+                          {['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00', '00:00', '01:00'].map(t => (
+                            <option key={t} value={t}>{t}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-white/60 text-sm">Fin</label>
+                        <select
+                          value={blockEndTime}
+                          onChange={(e) => setBlockEndTime(e.target.value)}
+                          className="w-full mt-1 px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
+                        >
+                          <option value="">--</option>
+                          {['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00', '00:00', '01:00', '02:00'].map(t => (
+                            <option key={t} value={t}>{t}</option>
+                          ))}
+                        </select>
+            </div>
+          </div>
+        )}
 
-                <div>
-                  <label className="block text-sm text-white/60 mb-2">Raison (optionnel)</label>
                   <input
                     type="text"
                     value={blockReason}
                     onChange={(e) => setBlockReason(e.target.value)}
-                    placeholder="Ex: Maintenance, Événement privé..."
-                    className="w-full px-4 py-3 bg-gray-800/50 border-2 border-white/20 text-white focus:outline-none focus:border-red-500"
+                    placeholder="Raison (optionnel)"
+                    className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
                   />
-                </div>
 
-                <button
-                  type="submit"
-                  disabled={savingBlock}
-                  className="px-6 py-3 bg-red-600 text-white font-black hover:bg-red-700 transition-colors disabled:opacity-50"
-                >
-                  {savingBlock ? 'Enregistrement...' : 'Bloquer ce créneau'}
-                </button>
-              </form>
-            </div>
+                  <div className="flex gap-2">
+          <button
+                      type="submit"
+                      disabled={savingBlock}
+                      className="flex-1 py-3 bg-red-600 text-white font-black rounded-lg disabled:opacity-50"
+          >
+                      {savingBlock ? '...' : 'Bloquer'}
+          </button>
+          <button
+                      type="button"
+                      onClick={() => setShowBlockForm(false)}
+                      className="px-6 py-3 bg-white/10 text-white rounded-lg"
+          >
+                      Annuler
+          </button>
+        </div>
+                </form>
+              )}
 
-            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl">
-              <h2 className="text-2xl font-black mb-6">Créneaux bloqués</h2>
-              {blockedSlots.length === 0 ? (
-                <p className="text-white/60 text-center py-8">Aucun créneau bloqué</p>
-              ) : (
-                <div className="space-y-4">
+              {blockedSlots.length > 0 && (
+                <div className="space-y-2">
                   {blockedSlots.map((slot: any) => (
                     <div
                       key={slot.id}
-                      className="bg-gray-800/50 border border-white/10 p-4 rounded-lg flex justify-between items-center"
+                      className="flex items-center justify-between bg-red-500/10 border border-red-500/20 rounded-lg p-3"
                     >
                       <div>
-                        <div className="font-black text-lg">
-                          {new Date(slot.date).toLocaleDateString('fr-FR', { 
-                            weekday: 'long', 
-                            year: 'numeric', 
-                            month: 'long', 
-                            day: 'numeric' 
-                          })}
+                        <div className="text-white font-black text-sm">
+                          {new Date(slot.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
                         </div>
-                        <div className="text-white/60 text-sm">
+                        <div className="text-red-300/60 text-xs">
                           {slot.full_day ? 'Toute la journée' : `${slot.start_time} - ${slot.end_time}`}
                           {slot.reason && ` · ${slot.reason}`}
                         </div>
                       </div>
                       <button
                         onClick={() => handleDeleteBlock(slot.id)}
-                        className="px-4 py-2 bg-red-500/20 text-red-300 text-xs font-black border border-red-500/30 hover:bg-red-500/30 transition-colors"
+                        className="text-red-400 text-lg px-2"
                       >
-                        SUPPRIMER
+                        ✕
                       </button>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-          </>
-        )}
-
-        {/* Fields Management */}
-        {activeTab === 'fields' && (
-          <>
-            <div className="mb-6 flex justify-between items-center">
-              <h2 className="text-2xl font-black">Gestion des Terrains</h2>
-              <button
-                onClick={() => {
-                  resetFieldForm();
-                  setEditingField(null);
-                  setShowFieldForm(true);
-                }}
-                className="px-6 py-3 bg-red-600 text-white font-black hover:bg-red-700 transition-colors"
-              >
-                + AJOUTER UN TERRAIN
-              </button>
-            </div>
-
-            {showFieldForm && (
-              <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl mb-6">
-                <h2 className="text-xl font-black mb-4">
-                  {editingField ? 'Modifier le terrain' : 'Créer un nouveau terrain'}
-                </h2>
-                <form onSubmit={handleSaveField} className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm text-white/60 mb-2">Nom du terrain *</label>
-                      <input
-                        type="text"
-                        value={fieldData.name}
-                        onChange={(e) => setFieldData({ ...fieldData, name: e.target.value })}
-                        required
-                        className="w-full px-4 py-3 bg-gray-800/50 border-2 border-white/20 text-white focus:outline-none focus:border-red-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm text-white/60 mb-2">Localisation *</label>
-                      <input
-                        type="text"
-                        value={fieldData.location}
-                        onChange={(e) => setFieldData({ ...fieldData, location: e.target.value })}
-                        required
-                        className="w-full px-4 py-3 bg-gray-800/50 border-2 border-white/20 text-white focus:outline-none focus:border-red-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-white/60 mb-2">Description *</label>
-                    <textarea
-                      value={fieldData.description}
-                      onChange={(e) => setFieldData({ ...fieldData, description: e.target.value })}
-                      required
-                      rows={4}
-                      className="w-full px-4 py-3 bg-gray-800/50 border-2 border-white/20 text-white focus:outline-none focus:border-red-500"
-                    />
-                  </div>
-
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm text-white/60 mb-2">Prix jour (8h-18h) FCFA/h *</label>
-                      <input
-                        type="number"
-                        value={fieldData.price_per_hour}
-                        onChange={(e) => setFieldData({ ...fieldData, price_per_hour: e.target.value })}
-                        required
-                        min="0"
-                        className="w-full px-4 py-3 bg-gray-800/50 border-2 border-white/20 text-white focus:outline-none focus:border-red-500"
-                      />
-                      <p className="text-xs text-white/40 mt-1">
-                        Prix nuit (19h-2h): {fieldData.price_per_hour ? Math.round(Number(fieldData.price_per_hour) * 1.25).toLocaleString() : '---'} FCFA/h (automatique)
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm text-white/60 mb-2">Capacité (joueurs) *</label>
-                      <input
-                        type="number"
-                        value={fieldData.capacity}
-                        onChange={(e) => setFieldData({ ...fieldData, capacity: e.target.value })}
-                        required
-                        min="1"
-                        className="w-full px-4 py-3 bg-gray-800/50 border-2 border-white/20 text-white focus:outline-none focus:border-red-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm text-white/60 mb-2">Note (0-5)</label>
-                      <input
-                        type="number"
-                        value={fieldData.rating}
-                        onChange={(e) => setFieldData({ ...fieldData, rating: e.target.value })}
-                        min="0"
-                        max="5"
-                        step="0.1"
-                        className="w-full px-4 py-3 bg-gray-800/50 border-2 border-white/20 text-white focus:outline-none focus:border-red-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-white/60 mb-2">Équipements</label>
-                    <div className="flex gap-2 mb-2">
-                      <input
-                        type="text"
-                        value={newFacility}
-                        onChange={(e) => setNewFacility(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addFacility())}
-                        placeholder="Ajouter un équipement"
-                        className="flex-1 px-4 py-2 bg-gray-800/50 border-2 border-white/20 text-white focus:outline-none focus:border-red-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={addFacility}
-                        className="px-4 py-2 bg-red-600 text-white font-black hover:bg-red-700 transition-colors"
-                      >
-                        +
-                      </button>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {fieldData.facilities.map((facility, index) => (
-                        <span
-                          key={index}
-                          className="px-3 py-1 bg-red-500/20 text-red-300 border border-red-500/30 text-sm flex items-center gap-2"
-                        >
-                          {facility}
-                          <button
-                            type="button"
-                            onClick={() => removeFacility(index)}
-                            className="text-red-400 hover:text-red-300"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-white/60 mb-2">Images</label>
-                    
-                    <div className="mb-4">
-                      <label className="block text-xs text-white/40 mb-2 font-mono uppercase">Upload depuis votre machine</label>
-                      <div className="flex gap-2">
-                        <label className="flex-1 px-4 py-3 bg-gray-800/50 border-2 border-white/20 text-white cursor-pointer hover:border-red-500 transition-colors flex items-center justify-center gap-2">
-                          <input
-                            type="file"
-                            accept="image/jpeg,image/jpg,image/png,image/webp"
-                            onChange={handleFileUpload}
-                            disabled={uploadingImage}
-                            className="hidden"
-                          />
-                          <span>{uploadingImage ? 'Upload en cours...' : '📁 Choisir un fichier'}</span>
-                        </label>
-                      </div>
-                      <p className="text-xs text-white/40 mt-1 font-light">Formats acceptés: JPEG, PNG, WebP (max 5MB)</p>
-                    </div>
-
-                    <div className="mb-4">
-                      <label className="block text-xs text-white/40 mb-2 font-mono uppercase">Ou ajouter via URL</label>
-                      <div className="flex gap-2">
-                        <input
-                          type="url"
-                          value={newImage}
-                          onChange={(e) => setNewImage(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addImage())}
-                          placeholder="https://example.com/image.jpg"
-                          className="flex-1 px-4 py-2 bg-gray-800/50 border-2 border-white/20 text-white focus:outline-none focus:border-red-500"
-                        />
-                        <button
-                          type="button"
-                          onClick={addImage}
-                          disabled={!newImage.trim()}
-                          className="px-4 py-2 bg-red-600 text-white font-black hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-
-                    {fieldData.images.length > 0 && (
-                      <div className="mt-4">
-                        <label className="block text-xs text-white/40 mb-2 font-mono uppercase">Images ajoutées ({fieldData.images.length})</label>
-                        <div className="flex flex-wrap gap-2">
-                          {fieldData.images.map((image, index) => (
-                            <div
-                              key={index}
-                              className="relative group"
-                            >
-                              <span className="px-3 py-1 bg-gray-500/20 text-gray-300 border border-gray-500/30 text-sm flex items-center gap-2">
-                                <a
-                                  href={image}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="hover:underline truncate max-w-[200px]"
-                                  title={image}
-                                >
-                                  Image {index + 1}
-                                </a>
-                                <button
-                                  type="button"
-                                  onClick={() => removeImage(index)}
-                                  className="text-red-400 hover:text-red-300 ml-1"
-                                >
-                                  ×
-                                </button>
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex gap-3">
-                    <button
-                      type="submit"
-                      disabled={savingField}
-                      className="px-6 py-3 bg-red-600 text-white font-black hover:bg-red-700 transition-colors disabled:opacity-50"
-                    >
-                      {savingField ? 'Enregistrement...' : editingField ? 'Mettre à jour' : 'Créer'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowFieldForm(false);
-                        setEditingField(null);
-                        resetFieldForm();
-                      }}
-                      className="px-6 py-3 bg-white/10 text-white font-black hover:bg-white/20 transition-colors"
-                    >
-                      Annuler
-                    </button>
-                  </div>
-                </form>
-              </div>
-            )}
-
-            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl">
-              <h2 className="text-2xl font-black mb-6">Liste des Terrains</h2>
-              {fields.length === 0 ? (
-                <p className="text-white/60 text-center py-8">Aucun terrain pour le moment</p>
-              ) : (
-                <div className="space-y-4">
-                  {fields.map((field) => (
-                    <div
-                      key={field.id}
-                      className="bg-gray-800/50 border border-white/10 p-6 rounded-lg"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="font-black text-xl mb-2">{field.name}</div>
-                          <div className="text-white/60 text-sm mb-2">📍 {field.location}</div>
-                          <div className="text-white/70 mb-3">{field.description}</div>
-                          <div className="grid grid-cols-4 gap-4 text-sm">
-                            <div>
-                              <span className="text-white/40">Prix:</span>
-                              <span className="text-red-500 ml-2 font-black">{field.price_per_hour.toLocaleString()} FCFA/h</span>
-                            </div>
-                            <div>
-                              <span className="text-white/40">Capacité:</span>
-                              <span className="text-white ml-2 font-black">{field.capacity} joueurs</span>
-                            </div>
-                            <div>
-                              <span className="text-white/40">Note:</span>
-                              <span className="text-yellow-400 ml-2 font-black">{field.rating}★</span>
-                            </div>
-                            <div>
-                              <span className="text-white/40">Équipements:</span>
-                              <span className="text-white ml-2">{field.facilities?.length || 0}</span>
-                            </div>
-                          </div>
-                          {field.facilities && field.facilities.length > 0 && (
-                            <div className="mt-3 flex flex-wrap gap-2">
-                              {field.facilities.map((facility, index) => (
-                                <span
-                                  key={index}
-                                  className="px-2 py-1 bg-red-500/20 text-red-300 border border-red-500/30 text-xs"
-                                >
-                                  {facility}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex flex-col gap-2 ml-4">
-                          <button
-                            onClick={() => handleEditField(field)}
-                            className="px-4 py-2 bg-gray-500/20 text-gray-300 text-xs font-black border border-gray-500/30 hover:bg-gray-500/30 transition-colors"
-                          >
-                            MODIFIER
-                          </button>
-                          <button
-                            onClick={() => handleDeleteField(field.id)}
-                            disabled={deletingField === field.id}
-                            className="px-4 py-2 bg-red-500/20 text-red-300 text-xs font-black border border-red-500/30 hover:bg-red-500/30 transition-colors disabled:opacity-50"
-                          >
-                            {deletingField === field.id ? '...' : 'SUPPRIMER'}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </>
-        )}
-
-        {/* Bookings Management */}
-        {activeTab === 'bookings' && (
-          <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl">
-            <h2 className="text-2xl font-black mb-6">Réservations à confirmer</h2>
-          {bookings.length === 0 ? (
-            <p className="text-white/60 text-center py-8">Aucune réservation pour le moment</p>
-          ) : (
-            <div className="space-y-4">
-              {bookings.map((booking) => (
-                <div
-                  key={booking.id}
-                  className="bg-gray-800/50 border border-white/10 p-6 rounded-lg"
-                >
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex-1">
-                      <div className="font-black text-xl mb-2">
-                        {new Date(booking.date).toLocaleDateString('fr-FR', { 
-                          weekday: 'long', 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
-                        })}
-                      </div>
-                      <div className="text-lg text-white/80 mb-1">⏰ {booking.time_slot}</div>
-                      <div className="text-white/60 text-sm mb-2">💰 {booking.amount.toLocaleString()} FCFA</div>
-                      <div className="text-white/60 text-sm mb-3">💳 {booking.payment_method}</div>
-                      
-                      {booking.user && (
-                        <div className="pt-3 border-t border-white/10">
-                          <div className="text-sm text-white/40 mb-1">Réservé par:</div>
-                          <div className="text-white font-black">{booking.user.name}</div>
-                          <div className="text-white/60 text-sm">{booking.user.email}</div>
-                          {booking.user.phone && (
-                            <div className="text-white/60 text-sm">{booking.user.phone}</div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <span
-                        className={`px-3 py-1 text-xs font-black ${
-                          booking.status === 'confirmed'
-                            ? 'bg-green-500/20 text-green-300 border border-green-500/30'
-                            : booking.status === 'cancelled'
-                            ? 'bg-red-500/20 text-red-300 border border-red-500/30'
-                            : 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
-                        }`}
-                      >
-                        {booking.status === 'confirmed' ? 'CONFIRMÉ' : booking.status === 'cancelled' ? 'ANNULÉ' : 'EN ATTENTE'}
-                      </span>
-                      {booking.status === 'pending' && (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleConfirmBooking(booking.id, 'confirmed')}
-                            disabled={updatingBooking === booking.id}
-                            className="px-4 py-2 bg-green-600 text-white text-xs font-black hover:bg-green-700 transition-colors disabled:opacity-50"
-                          >
-                            {updatingBooking === booking.id ? '...' : 'CONFIRMER'}
-                          </button>
-                          <button
-                            onClick={() => handleConfirmBooking(booking.id, 'cancelled')}
-                            disabled={updatingBooking === booking.id}
-                            className="px-4 py-2 bg-red-500/20 text-red-300 text-xs font-black border border-red-500/30 hover:bg-red-500/30 transition-colors disabled:opacity-50"
-                          >
-                            ANNULER
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
           </div>
         )}
 
-        {/* Create Manual Booking Tab */}
-        {activeTab === 'create-booking' && (
-          <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl">
-            <h2 className="text-2xl font-black mb-6">Créer une réservation manuelle</h2>
-            <p className="text-white/60 mb-6 font-light">
-              Utilisez cette fonctionnalité pour créer des réservations faites par téléphone. 
-              Vous pouvez réserver jusqu'à 6 mois à l'avance.
-            </p>
-            
-            <form onSubmit={handleCreateManualBooking} className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-white/60 mb-2">Nom du client *</label>
-                  <input
-                    type="text"
-                    value={manualBooking.user_name}
-                    onChange={(e) => setManualBooking({ ...manualBooking, user_name: e.target.value })}
-                    required
-                    placeholder="Jean Dupont"
-                    className="w-full px-4 py-3 bg-gray-800/50 border-2 border-white/20 text-white focus:outline-none focus:border-red-500"
-                  />
+        {/* FIELDS */}
+        {activeSection === 'fields' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-black text-white">Terrain</h2>
+              {fields.length === 0 && (
+                <button
+                  onClick={() => {
+                    resetFieldForm();
+                    setEditingField(null);
+                    setShowFieldForm(true);
+                  }}
+                  className="px-4 py-2 bg-red-600 text-white text-sm font-black rounded-lg"
+                >
+                  + Ajouter
+                </button>
+              )}
+            </div>
+
+            {fields.map((field) => (
+              <div
+                key={field.id}
+                className="bg-white/5 border border-white/10 rounded-xl p-4"
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h3 className="text-white font-black text-lg">{field.name}</h3>
+                    <p className="text-white/50 text-sm">📍 {field.location}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEditField(field)}
+                      className="px-3 py-1 bg-white/10 text-white text-xs rounded"
+                    >
+                      Modifier
+                    </button>
+                    <button
+                      onClick={() => handleDeleteField(field.id)}
+                      disabled={deletingField === field.id}
+                      className="px-3 py-1 bg-red-500/20 text-red-300 text-xs rounded"
+                    >
+                      {deletingField === field.id ? '...' : '✕'}
+                    </button>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm text-white/60 mb-2">Email *</label>
-                  <input
-                    type="email"
-                    value={manualBooking.user_email}
-                    onChange={(e) => setManualBooking({ ...manualBooking, user_email: e.target.value })}
-                    required
-                    placeholder="jean@example.com"
-                    className="w-full px-4 py-3 bg-gray-800/50 border-2 border-white/20 text-white focus:outline-none focus:border-red-500"
-                  />
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="bg-white/5 rounded-lg p-2">
+                    <div className="text-red-400 font-black">{field.price_per_hour.toLocaleString()}</div>
+                    <div className="text-white/40 text-xs">FCFA/h</div>
+                  </div>
+                  <div className="bg-white/5 rounded-lg p-2">
+                    <div className="text-white font-black">{field.capacity}</div>
+                    <div className="text-white/40 text-xs">joueurs</div>
+                  </div>
+                  <div className="bg-white/5 rounded-lg p-2">
+                    <div className="text-yellow-400 font-black">{field.rating}★</div>
+                    <div className="text-white/40 text-xs">note</div>
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
+        )}
 
+        {/* SETTINGS */}
+        {activeSection === 'settings' && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-black text-white mb-4">Paramètres</h2>
+            
+            <button
+              onClick={() => setShowPasswordForm(!showPasswordForm)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-left"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🔒</span>
+                <div>
+                  <div className="text-white font-black">Mot de passe</div>
+                  <div className="text-white/50 text-sm">Modifier mon mot de passe</div>
+                </div>
+              </div>
+            </button>
+
+        {showPasswordForm && (
+              <form onSubmit={handleUpdatePassword} className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Nouveau mot de passe"
+                  className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
+              />
+                <div className="flex gap-2">
+                <button
+                  type="submit"
+                    className="flex-1 py-3 bg-red-600 text-white font-black rounded-lg"
+                >
+                  Mettre à jour
+                </button>
+                <button
+                  type="button"
+                    onClick={() => setShowPasswordForm(false)}
+                    className="px-6 py-3 bg-white/10 text-white rounded-lg"
+                >
+                  Annuler
+                </button>
+              </div>
+            </form>
+            )}
+
+            <button
+              onClick={() => setShowCreateAdminForm(!showCreateAdminForm)}
+              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-left"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">👤</span>
+                <div>
+                  <div className="text-white font-black">Créer un admin</div>
+                  <div className="text-white/50 text-sm">Ajouter un nouvel administrateur</div>
+                </div>
+              </div>
+            </button>
+
+        {showCreateAdminForm && (
+              <form onSubmit={handleCreateAdmin} className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+              <input
+                type="text"
+                value={adminData.name}
+                onChange={(e) => setAdminData({ ...adminData, name: e.target.value })}
+                placeholder="Nom complet"
+                  className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
+              />
+              <input
+                type="email"
+                value={adminData.email}
+                onChange={(e) => setAdminData({ ...adminData, email: e.target.value })}
+                placeholder="Email"
+                  className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
+              />
+              <input
+                type="password"
+                value={adminData.password}
+                onChange={(e) => setAdminData({ ...adminData, password: e.target.value })}
+                placeholder="Mot de passe"
+                  className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
+              />
+                <div className="flex gap-2">
+                <button
+                  type="submit"
+                    className="flex-1 py-3 bg-red-600 text-white font-black rounded-lg"
+                >
+                    Créer
+                </button>
+                <button
+                  type="button"
+                    onClick={() => setShowCreateAdminForm(false)}
+                    className="px-6 py-3 bg-white/10 text-white rounded-lg"
+                >
+                  Annuler
+                </button>
+              </div>
+            </form>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Manual Booking Modal */}
+      {showManualBooking && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="bg-gray-900 w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-gray-900 p-4 border-b border-white/10 flex items-center justify-between">
+              <h2 className="text-xl font-black text-white">Nouvelle réservation</h2>
+              <button
+                onClick={() => setShowManualBooking(false)}
+                className="text-white/50 text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <form onSubmit={handleCreateManualBooking} className="p-4 space-y-4">
               <div>
-                <label className="block text-sm text-white/60 mb-2">Téléphone</label>
+                <label className="text-white/60 text-sm">Nom du client *</label>
+                <input
+                  type="text"
+                  value={manualBooking.user_name}
+                  onChange={(e) => setManualBooking({ ...manualBooking, user_name: e.target.value })}
+                  required
+                  className="w-full mt-1 px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
+                />
+              </div>
+              
+              <div>
+                <label className="text-white/60 text-sm">Email *</label>
+                <input
+                  type="email"
+                  value={manualBooking.user_email}
+                  onChange={(e) => setManualBooking({ ...manualBooking, user_email: e.target.value })}
+                  required
+                  className="w-full mt-1 px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
+                />
+              </div>
+              
+              <div>
+                <label className="text-white/60 text-sm">Téléphone</label>
                 <input
                   type="tel"
                   value={manualBooking.user_phone}
                   onChange={(e) => setManualBooking({ ...manualBooking, user_phone: e.target.value })}
-                  placeholder="+221XXXXXXXXX"
-                  className="w-full px-4 py-3 bg-gray-800/50 border-2 border-white/20 text-white focus:outline-none focus:border-red-500"
+                  className="w-full mt-1 px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
                 />
               </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
+              
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm text-white/60 mb-2">Date *</label>
+                  <label className="text-white/60 text-sm">Date *</label>
                   <input
                     type="date"
                     value={manualBooking.date}
@@ -1464,156 +1351,245 @@ export default function AdminPage() {
                     min={getMinDate()}
                     max={getMaxDate()}
                     required
-                    className="w-full px-4 py-3 bg-gray-800/50 border-2 border-white/20 text-white focus:outline-none focus:border-red-500"
+                    className="w-full mt-1 px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-white/60 mb-2">Heure de début *</label>
+                  <label className="text-white/60 text-sm">Heure *</label>
                   <select
                     value={manualBooking.start_time}
                     onChange={(e) => setManualBooking({ ...manualBooking, start_time: e.target.value })}
                     required
-                    className="w-full px-4 py-3 bg-gray-800/50 border-2 border-white/20 text-white focus:outline-none focus:border-red-500"
+                    className="w-full mt-1 px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
                   >
-                    <option value="">Sélectionner</option>
-                    {['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00', '00:00', '01:00'].map((time) => (
-                      <option key={time} value={time}>{time}</option>
+                    <option value="">--</option>
+                    {['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00', '00:00', '01:00'].map(t => (
+                      <option key={t} value={t}>{t}</option>
                     ))}
                   </select>
                 </div>
               </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-white/60 mb-2">Durée</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      { value: 60, label: '1 Heure' },
-                      { value: 90, label: '1 Heure 30' },
-                    ].map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => setManualBooking({ ...manualBooking, duration: option.value as 60 | 90 })}
-                        className={`px-4 py-3 border-2 text-sm font-light transition-all ${
-                          manualBooking.duration === option.value
-                            ? 'border-red-500 bg-red-500/20 text-red-300'
-                            : 'border-white/20 bg-gray-800/50 text-white/60 hover:border-white/30'
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm text-white/60 mb-2">Méthode de paiement</label>
-                  <select
-                    value={manualBooking.payment_method}
-                    onChange={(e) => setManualBooking({ ...manualBooking, payment_method: e.target.value as 'wave' | 'orange_money' | 'cash' })}
-                    className="w-full px-4 py-3 bg-gray-800/50 border-2 border-white/20 text-white focus:outline-none focus:border-red-500"
-                  >
-                    <option value="cash">Espèces</option>
-                    <option value="wave">Wave</option>
-                    <option value="orange_money">Orange Money</option>
-                  </select>
+              
+              <div>
+                <label className="text-white/60 text-sm">Durée</label>
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  {[
+                    { value: 60, label: '1 Heure' },
+                    { value: 90, label: '1h30' },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setManualBooking({ ...manualBooking, duration: opt.value as 60 | 90 })}
+                      className={`py-3 rounded-lg text-sm font-black ${
+                        manualBooking.duration === opt.value
+                          ? 'bg-red-500 text-white'
+                          : 'bg-white/10 text-white/60'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
                 </div>
               </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="submit"
-                  disabled={creatingBooking}
-                  className="px-6 py-3 bg-red-600 text-white font-black hover:bg-red-700 transition-colors disabled:opacity-50"
+              
+              <div>
+                <label className="text-white/60 text-sm">Paiement</label>
+                <select
+                  value={manualBooking.payment_method}
+                  onChange={(e) => setManualBooking({ ...manualBooking, payment_method: e.target.value as 'wave' | 'orange_money' | 'cash' })}
+                  className="w-full mt-1 px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
                 >
-                  {creatingBooking ? 'Création...' : 'Créer la réservation'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setManualBooking({
-                    user_name: '',
-                    user_email: '',
-                    user_phone: '',
-                    date: '',
-                    start_time: '',
-                    duration: 60,
-                    payment_method: 'cash',
-                  })}
-                  className="px-6 py-3 bg-white/10 text-white font-black hover:bg-white/20 transition-colors"
-                >
-                  Réinitialiser
-                </button>
+                  <option value="cash">Espèces</option>
+                  <option value="wave">Wave</option>
+                  <option value="orange_money">Orange Money</option>
+                </select>
               </div>
+              
+              <button
+                type="submit"
+                disabled={creatingBooking}
+                className="w-full py-4 bg-red-600 text-white font-black rounded-xl disabled:opacity-50"
+              >
+                {creatingBooking ? 'Création...' : 'Créer la réservation'}
+              </button>
             </form>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Week Availability Management Tab */}
-        {activeTab === 'weeks' && (
-          <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-2xl">
-            <h2 className="text-2xl font-black mb-4">Gestion des Semaines</h2>
-            <p className="text-white/60 mb-6 font-light">
-              Activez ou désactivez les semaines pour les réservations. Seules les semaines ouvertes seront visibles pour les clients.
-            </p>
-            
-            <div className="space-y-3">
-              {generateWeeks().map((week) => {
-                const weekData = weekAvailability.find(w => w.week_start_date === week.weekStartStr);
-                const isOpen = weekData?.is_open !== false; // Default to open
-                const isUpdating = updatingWeek === week.weekStartStr;
+      {/* Field Form Modal */}
+      {showFieldForm && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm">
+          <div className="bg-gray-900 w-full sm:max-w-lg sm:rounded-2xl rounded-t-3xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-gray-900 p-4 border-b border-white/10 flex items-center justify-between">
+              <h2 className="text-xl font-black text-white">
+                {editingField ? 'Modifier terrain' : 'Nouveau terrain'}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowFieldForm(false);
+                  setEditingField(null);
+                  resetFieldForm();
+                }}
+                className="text-white/50 text-2xl"
+              >
+                ✕
+              </button>
+            </div>
 
-                return (
-                  <div
-                    key={week.weekStartStr}
-                    className={`bg-gray-800/50 border-2 rounded-xl p-4 transition-all ${
-                      isOpen ? 'border-green-500/30' : 'border-red-500/30'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-black text-lg text-white mb-1">
-                          Semaine du {week.weekStart.toLocaleDateString('fr-FR', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric'
-                          })} au {week.weekEnd.toLocaleDateString('fr-FR', {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric'
-                          })}
-                        </div>
-                        <div className="text-white/40 text-sm">
-                          {week.weekStart.toLocaleDateString('fr-FR', { weekday: 'long' })} - {week.weekEnd.toLocaleDateString('fr-FR', { weekday: 'long' })}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className={`px-4 py-2 rounded-lg font-black text-sm ${
-                          isOpen 
-                            ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-                            : 'bg-red-500/20 text-red-400 border border-red-500/30'
-                        }`}>
-                          {isOpen ? 'OUVERTE' : 'FERMÉE'}
-                        </span>
-                        <button
-                          onClick={() => handleToggleWeek(week.weekStartStr, isOpen)}
-                          disabled={isUpdating}
-                          className={`px-6 py-3 font-black transition-colors rounded-xl ${
-                            isOpen
-                              ? 'bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30'
-                              : 'bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30'
-                          } disabled:opacity-50`}
-                        >
-                          {isUpdating ? '...' : isOpen ? 'FERMER' : 'OUVRIR'}
-                        </button>
-                      </div>
+            <form onSubmit={handleSaveField} className="p-4 space-y-4">
+                    <div>
+                <label className="text-white/60 text-sm">Nom *</label>
+                      <input
+                        type="text"
+                        value={fieldData.name}
+                        onChange={(e) => setFieldData({ ...fieldData, name: e.target.value })}
+                        required
+                  className="w-full mt-1 px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
+                      />
+                    </div>
+              
+                    <div>
+                <label className="text-white/60 text-sm">Localisation *</label>
+                      <input
+                        type="text"
+                        value={fieldData.location}
+                        onChange={(e) => setFieldData({ ...fieldData, location: e.target.value })}
+                        required
+                  className="w-full mt-1 px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
+                      />
+                  </div>
+
+                  <div>
+                <label className="text-white/60 text-sm">Description *</label>
+                    <textarea
+                      value={fieldData.description}
+                      onChange={(e) => setFieldData({ ...fieldData, description: e.target.value })}
+                      required
+                  rows={3}
+                  className="w-full mt-1 px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
+                    />
+                  </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                    <div>
+                  <label className="text-white/60 text-sm">Prix/h *</label>
+                      <input
+                        type="number"
+                        value={fieldData.price_per_hour}
+                        onChange={(e) => setFieldData({ ...fieldData, price_per_hour: e.target.value })}
+                        required
+                    className="w-full mt-1 px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
+                      />
+                    </div>
+                    <div>
+                  <label className="text-white/60 text-sm">Capacité *</label>
+                      <input
+                        type="number"
+                        value={fieldData.capacity}
+                        onChange={(e) => setFieldData({ ...fieldData, capacity: e.target.value })}
+                        required
+                    className="w-full mt-1 px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
+                      />
+                    </div>
+                    <div>
+                  <label className="text-white/60 text-sm">Note</label>
+                      <input
+                        type="number"
+                        value={fieldData.rating}
+                        onChange={(e) => setFieldData({ ...fieldData, rating: e.target.value })}
+                        min="0"
+                        max="5"
+                        step="0.1"
+                    className="w-full mt-1 px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
+                      />
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
+
+                  <div>
+                <label className="text-white/60 text-sm">Équipements</label>
+                <div className="flex gap-2 mt-1">
+                      <input
+                        type="text"
+                        value={newFacility}
+                        onChange={(e) => setNewFacility(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addFacility())}
+                    placeholder="Ajouter..."
+                    className="flex-1 px-4 py-2 bg-gray-800 border border-white/20 rounded-lg text-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={addFacility}
+                    className="px-4 bg-red-600 text-white rounded-lg"
+                      >
+                        +
+                      </button>
+                    </div>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {fieldData.facilities.map((f, i) => (
+                    <span key={i} className="px-2 py-1 bg-red-500/20 text-red-300 text-sm rounded flex items-center gap-1">
+                      {f}
+                      <button type="button" onClick={() => removeFacility(i)} className="text-red-400">✕</button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                <label className="text-white/60 text-sm">Images</label>
+                <div className="mt-1">
+                  <label className="block w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white/50 text-center cursor-pointer">
+                          <input
+                            type="file"
+                      accept="image/*"
+                            onChange={handleFileUpload}
+                            disabled={uploadingImage}
+                            className="hidden"
+                          />
+                    {uploadingImage ? 'Upload...' : '📁 Choisir une image'}
+                        </label>
+                      </div>
+                    {fieldData.images.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {fieldData.images.map((img, i) => (
+                      <span key={i} className="px-2 py-1 bg-gray-500/20 text-gray-300 text-sm rounded flex items-center gap-1">
+                        Image {i + 1}
+                        <button type="button" onClick={() => removeImage(i)} className="text-red-400">✕</button>
+                              </span>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+
+                    <button
+                      type="submit"
+                      disabled={savingField}
+                className="w-full py-4 bg-red-600 text-white font-black rounded-xl disabled:opacity-50"
+                    >
+                      {savingField ? 'Enregistrement...' : editingField ? 'Mettre à jour' : 'Créer'}
+                    </button>
+                </form>
+              </div>
+                            </div>
+      )}
+
+      <style jsx>{`
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.2s ease-out;
+        }
+      `}</style>
     </div>
   );
 }

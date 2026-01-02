@@ -1,24 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase/admin';
 
-// Helper to get Monday of a given week
-function getWeekStart(date: Date): Date {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
-  return new Date(d.setDate(diff));
+// Helper to get Monday of a given week (returns YYYY-MM-DD string)
+function getWeekStartString(date: Date): string {
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const day = date.getDate();
+  const dayOfWeek = date.getDay();
+  const diff = day - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Adjust when day is Sunday
+  const monday = new Date(year, month, diff);
+  const yyyy = monday.getFullYear();
+  const mm = String(monday.getMonth() + 1).padStart(2, '0');
+  const dd = String(monday.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 // Helper to check if a date is in an open week
 export async function isWeekOpen(fieldId: string, date: Date): Promise<boolean> {
   const supabase = getAdminClient();
-  const weekStart = getWeekStart(date);
+  const weekStart = getWeekStartString(date);
 
   const { data: week } = await supabase
     .from('week_availability')
     .select('is_open')
     .eq('field_id', fieldId)
-    .eq('week_start_date', weekStart.toISOString().split('T')[0])
+    .eq('week_start_date', weekStart)
     .single();
 
   // If no record exists, default to open (backward compatibility)
@@ -50,8 +56,8 @@ export async function GET(request: NextRequest) {
     
     // Get all week starts for the next 2 weeks
     for (let i = 0; i < 2; i++) {
-      const weekStart = getWeekStart(currentDate);
-      weekStarts.push(weekStart.toISOString().split('T')[0]);
+      const weekStart = getWeekStartString(currentDate);
+      weekStarts.push(weekStart);
       currentDate.setDate(currentDate.getDate() + 7);
     }
 
@@ -83,11 +89,11 @@ export async function GET(request: NextRequest) {
     // If checking a specific date, return just that week's status
     if (date) {
       const checkDate = new Date(date);
-      const checkWeekStart = getWeekStart(checkDate);
-      const weekStatus = result.find(w => w.week_start_date === checkWeekStart.toISOString().split('T')[0]);
+      const checkWeekStart = getWeekStartString(checkDate);
+      const weekStatus = result.find(w => w.week_start_date === checkWeekStart);
       return NextResponse.json({ 
         is_open: weekStatus?.is_open !== false,
-        week_start_date: checkWeekStart.toISOString().split('T')[0]
+        week_start_date: checkWeekStart
       });
     }
 
