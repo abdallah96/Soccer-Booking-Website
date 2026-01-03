@@ -93,6 +93,16 @@ export default function AdminPage() {
     }
   }, [fields]);
 
+  // Prevent body scroll when modals are open
+  useEffect(() => {
+    if (showManualBooking || showFieldForm) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [showManualBooking, showFieldForm]);
+
   const fetchBookings = async () => {
     try {
       const response = await fetch('/api/admin/bookings', {
@@ -1327,9 +1337,9 @@ export default function AdminPage() {
 
       {/* Manual Booking Modal */}
       {showManualBooking && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="bg-gray-900 w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-gray-900 p-4 border-b border-white/10 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-gray-900 w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl max-h-[90vh] my-auto overflow-y-auto">
+            <div className="sticky top-0 bg-gray-900 p-4 border-b border-white/10 flex items-center justify-between z-10">
               <h2 className="text-xl font-black text-white">Nouvelle réservation</h2>
               <button
                 onClick={() => setShowManualBooking(false)}
@@ -1451,9 +1461,9 @@ export default function AdminPage() {
 
       {/* Field Form Modal */}
       {showFieldForm && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="bg-gray-900 w-full sm:max-w-lg sm:rounded-2xl rounded-t-3xl max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-gray-900 p-4 border-b border-white/10 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-gray-900 w-full sm:max-w-lg sm:rounded-2xl rounded-t-3xl max-h-[90vh] my-auto overflow-y-auto">
+            <div className="sticky top-0 bg-gray-900 p-4 border-b border-white/10 flex items-center justify-between z-10">
               <h2 className="text-xl font-black text-white">
                 {editingField ? 'Modifier terrain' : 'Nouveau terrain'}
               </h2>

@@ -28,8 +28,8 @@ const StarRating = ({ rating, onRate, interactive = false }: { rating: number; o
           onClick={() => interactive && onRate && onRate(star)}
           onMouseEnter={() => interactive && setHoverRating(star)}
           onMouseLeave={() => interactive && setHoverRating(0)}
-          className={`text-4xl transition-all duration-200 ${
-            interactive ? 'cursor-pointer hover:scale-125' : 'cursor-default'
+          className={`text-3xl sm:text-4xl transition-all duration-200 ${
+            interactive ? 'cursor-pointer hover:scale-125 active:scale-110' : 'cursor-default'
           } ${
             (hoverRating || rating) >= star ? 'text-yellow-400' : 'text-gray-600'
           }`}
@@ -58,12 +58,26 @@ export function ReviewModal({ isOpen, onClose, fieldId, onReviewSubmitted, editi
       setReviewerName('');
       setReviewerEmail('');
       setIsAnonymous(false);
+      // Re-enable body scroll when modal closes
+      document.body.style.overflow = '';
     } else if (editingReview) {
       setRating(editingReview.rating);
       setComment(editingReview.comment);
       setIsAnonymous(false); // Can't edit anonymous reviews
     }
   }, [isOpen, editingReview]);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      // Disable body scroll
+      document.body.style.overflow = 'hidden';
+      // Re-enable on unmount
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,45 +142,46 @@ export function ReviewModal({ isOpen, onClose, fieldId, onReviewSubmitted, editi
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/80 backdrop-blur-sm"
         onClick={onClose}
       />
       
       {/* Modal */}
-      <div className="relative w-full max-w-2xl bg-gray-900 border-2 border-red-500/30 rounded-3xl shadow-2xl overflow-hidden animate-scale-in">
+      <div className="relative w-full max-w-2xl max-h-[90vh] bg-gray-900 border-2 border-red-500/30 rounded-2xl md:rounded-3xl shadow-2xl overflow-hidden animate-scale-in my-auto">
         {/* Decorative border effect */}
         <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 via-transparent to-gray-500/10 pointer-events-none" />
         
-        <div className="relative p-8 md:p-10">
+        {/* Scrollable content */}
+        <div className="relative p-4 sm:p-6 md:p-8 lg:p-10 overflow-y-auto max-h-[90vh]">
           {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-black text-white mb-2">
+          <div className="flex items-start justify-between mb-4 md:mb-8 gap-3">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-white mb-1 md:mb-2">
                 {editingReview ? 'Modifier votre avis' : 'Laissez-nous un commentaire'}
               </h2>
-              <p className="text-white/60 font-light">
+              <p className="text-white/60 font-light text-sm md:text-base">
                 {editingReview ? 'Mettez à jour votre commentaire' : 'Partagez votre expérience sur ce terrain'}
               </p>
             </div>
             <button
               onClick={onClose}
-              className="w-10 h-10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+              className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-colors flex-shrink-0"
               aria-label="Fermer"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
             {/* Star Rating */}
             <div>
-              <label className="block text-sm font-black text-white/80 mb-4 text-center uppercase tracking-tight font-mono">
+              <label className="block text-xs md:text-sm font-black text-white/80 mb-3 md:mb-4 text-center uppercase tracking-tight font-mono">
                 Votre note
               </label>
               <StarRating 
@@ -175,7 +190,7 @@ export function ReviewModal({ isOpen, onClose, fieldId, onReviewSubmitted, editi
                 interactive={true} 
               />
               {rating > 0 && (
-                <p className="text-center text-white/60 text-sm mt-3">
+                <p className="text-center text-white/60 text-xs md:text-sm mt-2 md:mt-3">
                   {rating === 5 && '⭐ Excellent !'}
                   {rating === 4 && '👍 Très bien'}
                   {rating === 3 && '👍 Bien'}
