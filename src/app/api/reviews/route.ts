@@ -210,7 +210,18 @@ export async function POST(request: NextRequest) {
         .eq('id', field_id);
     }
 
-    return NextResponse.json({ review }, { status: 201 });
+    // Return review with analytics data
+    return NextResponse.json({ 
+      review,
+      analytics: {
+        rating,
+        is_anonymous: !user,
+        total_reviews: (allReviews?.length || 0) + 1,
+        average_rating: allReviews && allReviews.length > 0 
+          ? Math.round((allReviews.reduce((sum, r) => sum + r.rating, 0) + rating) / (allReviews.length + 1) * 10) / 10
+          : rating
+      }
+    }, { status: 201 });
   } catch (error) {
     console.error('Error in POST /api/reviews:', error);
     return NextResponse.json(

@@ -151,7 +151,7 @@ export default function FieldsPage() {
         </div>
 
         {/* Info Box */}
-        <div className="max-w-2xl mx-auto mt-12">
+        <div className="max-w-2xl mx-auto mt-12 space-y-4">
           <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-xl">
             <h3 className="text-lg font-black text-white mb-4">📅 Réservation</h3>
             <ul className="space-y-3 text-white/70 font-light">
@@ -173,6 +173,14 @@ export default function FieldsPage() {
               </li>
             </ul>
           </div>
+          <Link href="/fields/info">
+            <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-xl hover:bg-white/10 transition-colors cursor-pointer">
+              <h3 className="text-lg font-black text-white mb-2">ℹ️ Plus d'informations</h3>
+              <p className="text-white/60 text-sm font-light">
+                Découvrez les statistiques détaillées, les équipements et toutes les informations sur le terrain.
+              </p>
+            </div>
+          </Link>
         </div>
       </div>
     </div>

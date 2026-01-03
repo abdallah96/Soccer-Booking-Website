@@ -81,7 +81,7 @@ export default function Home() {
               </div>
               
               <p className="text-xl sm:text-2xl text-white/70 max-w-2xl leading-relaxed font-light">
-                Pas de chaos WhatsApp. Pas d'annulations de dernière minute. Juste du football pur. Réservez votre terrain, rassemblez votre équipe, jouez.
+                L'endroit où les amis se retrouvent, où les rires résonnent, où chaque match est une aventure. Pas de pression, pas de stress. Juste du plaisir, de la passion et des moments inoubliables. Réservez, venez, amusez-vous.
               </p>
 
               <div className="flex flex-wrap gap-4 pt-4">
@@ -256,9 +256,9 @@ export default function Home() {
                       <div className="relative bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 text-white p-10 md:p-12 rounded-3xl shadow-2xl transform group-hover:-translate-y-2 transition-all duration-300 z-20">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl"></div>
                         <div className="relative z-10">
-                          <h3 className="text-3xl md:text-4xl font-black mb-6 leading-tight">CONSULTEZ LE CALENDRIER</h3>
+                          <h3 className="text-3xl md:text-4xl font-black mb-6 leading-tight">DÉCOUVREZ LES CRÉNEAUX</h3>
                           <p className="text-lg text-white/70 leading-relaxed mb-6 font-light">
-                            Visualisez les créneaux disponibles pour la semaine en cours et la semaine suivante. Choisissez l'heure qui vous convient.
+                            Parcourez les disponibilités en un clin d'œil. Trouvez le moment parfait pour vous et vos amis. Simple et intuitif.
                           </p>
                           <div className="pt-6 border-t border-white/10">
                             <div className="flex items-center gap-3 flex-wrap">
@@ -355,9 +355,9 @@ export default function Home() {
                         <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
                         <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
                         <div className="relative z-10">
-                          <h3 className="text-3xl md:text-4xl font-black mb-6 leading-tight">PRÉSENTEZ-VOUS & JOUEZ</h3>
+                          <h3 className="text-3xl md:text-4xl font-black mb-6 leading-tight">PRÉSENTEZ-VOUS & PROFITEZ</h3>
                           <p className="text-lg text-white/90 leading-relaxed mb-6 font-light">
-                            Terrain prêt. Équipe notifiée. Tout est prêt. Il ne reste plus qu'à jouer et gagner.
+                            Terrain prêt. Amis réunis. Ambiance au rendez-vous. Il ne reste plus qu'à s'amuser et créer des souvenirs.
                           </p>
                           <div className="pt-6 border-t border-white/20">
                             <div className="flex items-center gap-3 flex-wrap">
@@ -407,9 +407,9 @@ export default function Home() {
               PETIT <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-700">CAMP</span>
             </h2>
             <div className="flex items-center justify-between">
-              <p className="text-xl text-white/60 font-light">
-                Terrain professionnel. Installations modernes. Disponible maintenant.
-              </p>
+            <p className="text-xl text-white/60 font-light">
+              Un espace dédié au plaisir du football. Où chaque match est une occasion de rire, de partager et de s'amuser.
+            </p>
               <Link 
                 href="/fields" 
                 className="text-white/80 hover:text-white font-bold text-sm font-mono tracking-wider border-b-2 border-white/30 hover:border-red-500 transition-colors"

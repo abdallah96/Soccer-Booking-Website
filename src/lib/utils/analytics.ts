@@ -36,7 +36,11 @@ export type EventName =
   | 'payment_method_selected'
   | 'payment_initiated'
   | 'payment_completed'
-  | 'payment_failed';
+  | 'payment_failed'
+  // Review events
+  | 'review_submitted'
+  | 'review_edited'
+  | 'rating_given';
 
 /**
  * Track an analytics event (client-side only)
@@ -154,5 +158,15 @@ export function trackPayment(
   properties?: Record<string, any>
 ): void {
   trackEvent('payment', event, properties);
+}
+
+/**
+ * Track review/rating events
+ */
+export function trackReview(
+  event: 'review_submitted' | 'review_edited' | 'rating_given',
+  properties?: Record<string, any>
+): void {
+  trackEvent('field', event, properties);
 }
 

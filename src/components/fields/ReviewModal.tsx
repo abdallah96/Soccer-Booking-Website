@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import { trackReview } from '@/lib/utils/analytics';
 
 interface ReviewModalProps {
   isOpen: boolean;
@@ -126,6 +127,22 @@ export function ReviewModal({ isOpen, onClose, fieldId, onReviewSubmitted, editi
 
       const result = await response.json();
       if (response.ok) {
+        // Track rating analytics
+        trackReview(editingReview ? 'review_edited' : 'review_submitted', {
+          field_id: fieldId,
+          rating,
+          is_anonymous: isAnonymous,
+          comment_length: comment.trim().length,
+          ...(result.analytics || {}),
+        });
+        
+        // Track rating given event
+        trackReview('rating_given', {
+          field_id: fieldId,
+          rating_value: rating,
+          is_anonymous: isAnonymous,
+        });
+        
         toast.success(editingReview ? 'Avis mis à jour !' : 'Merci pour votre avis !');
         onReviewSubmitted();
         onClose();
