@@ -89,6 +89,12 @@ export const Header = () => {
                   ACCUEIL
                 </Link>
                 <Link 
+                  href="/fields/info" 
+                  className="text-gray-700 hover:text-red-600 font-bold text-sm tracking-tight transition-colors"
+                >
+                  TERRAIN
+                </Link>
+                <Link 
                   href="/fields" 
                   className="text-gray-700 hover:text-red-600 font-bold text-sm tracking-tight transition-colors"
                 >
@@ -129,6 +135,12 @@ export const Header = () => {
                   className="text-gray-700 hover:text-red-600 font-bold text-sm tracking-tight transition-colors"
                 >
                   ACCUEIL
+                </Link>
+                <Link 
+                  href="/fields/info" 
+                  className="text-gray-700 hover:text-red-600 font-bold text-sm tracking-tight transition-colors"
+                >
+                  TERRAIN
                 </Link>
                 <Link 
                   href="/fields" 
@@ -214,6 +226,13 @@ export const Header = () => {
                   ACCUEIL
                 </Link>
                 <Link 
+                  href="/fields/info" 
+                  className="block py-3 text-gray-700 font-bold text-sm tracking-tight hover:text-red-600 transition-colors"
+                  onClick={() => setShowMenu(false)}
+                >
+                  TERRAIN
+                </Link>
+                <Link 
                   href="/fields" 
                   className="block py-3 text-gray-700 font-bold text-sm tracking-tight hover:text-red-600 transition-colors"
                   onClick={() => setShowMenu(false)}
@@ -262,6 +281,13 @@ export const Header = () => {
                   onClick={() => setShowMenu(false)}
                 >
                   ACCUEIL
+                </Link>
+                <Link 
+                  href="/fields/info" 
+                  className="block py-3 text-gray-700 font-bold text-sm tracking-tight hover:text-red-600 transition-colors"
+                  onClick={() => setShowMenu(false)}
+                >
+                  TERRAIN
                 </Link>
                 <Link 
                   href="/fields" 

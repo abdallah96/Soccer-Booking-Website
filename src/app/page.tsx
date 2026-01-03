@@ -81,7 +81,7 @@ export default function Home() {
               </div>
               
               <p className="text-xl sm:text-2xl text-white/70 max-w-2xl leading-relaxed font-light">
-                L'endroit où les amis se retrouvent, où les rires résonnent, où chaque match est une aventure. Pas de pression, pas de stress. Juste du plaisir, de la passion et des moments inoubliables. Réservez, venez, amusez-vous.
+                Réservez votre terrain en quelques clics. Disponibilités en temps réel, paiement sécurisé, confirmation immédiate. Simple, rapide, fiable. Votre créneau vous attend.
               </p>
 
               <div className="flex flex-wrap gap-4 pt-4">
@@ -355,9 +355,9 @@ export default function Home() {
                         <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
                         <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
                         <div className="relative z-10">
-                          <h3 className="text-3xl md:text-4xl font-black mb-6 leading-tight">PRÉSENTEZ-VOUS & PROFITEZ</h3>
+                          <h3 className="text-3xl md:text-4xl font-black mb-6 leading-tight">PRÉSENTEZ-VOUS & JOUEZ</h3>
                           <p className="text-lg text-white/90 leading-relaxed mb-6 font-light">
-                            Terrain prêt. Amis réunis. Ambiance au rendez-vous. Il ne reste plus qu'à s'amuser et créer des souvenirs.
+                            Terrain réservé et confirmé. Présentez-vous à l'heure prévue. Pas d'attente, pas de complication. Votre créneau vous attend.
                           </p>
                           <div className="pt-6 border-t border-white/20">
                             <div className="flex items-center gap-3 flex-wrap">
