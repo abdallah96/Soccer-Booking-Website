@@ -52,6 +52,7 @@ export default function FieldDetailPage() {
   const [averageRating, setAverageRating] = useState(0);
   const [userHasReviewed, setUserHasReviewed] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [editingReview, setEditingReview] = useState<{ id: string; rating: number; comment: string } | null>(null);
 
   useEffect(() => {
     if (params.id) {
@@ -91,6 +92,8 @@ export default function FieldDetailPage() {
         if (user) {
           const hasReviewed = (data.reviews || []).some((r: any) => r.user_id === user.id);
           setUserHasReviewed(hasReviewed);
+        } else {
+          setUserHasReviewed(false); // Anonymous users can always review
         }
       }
     } catch (error) {
@@ -257,62 +260,62 @@ export default function FieldDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 py-12 md:py-20 px-6 sm:px-8 lg:px-12">
+    <div className="min-h-screen bg-gray-900 py-6 md:py-12 lg:py-20 px-4 sm:px-6 lg:px-12">
       <div className="max-w-[1600px] mx-auto">
-        <Link href="/fields" className="inline-flex items-center gap-2 text-white/60 hover:text-white mb-8 font-light font-mono text-sm transition-colors">
+        <Link href="/fields" className="inline-flex items-center gap-2 text-white/60 hover:text-white mb-4 md:mb-8 font-light font-mono text-sm transition-colors">
           ← RETOUR
         </Link>
 
-        <div className="grid lg:grid-cols-12 gap-8 md:gap-12">
-          <div className="lg:col-span-7 space-y-8">
+        <div className="grid lg:grid-cols-12 gap-6 md:gap-8 lg:gap-12">
+          <div className="lg:col-span-7 space-y-6 md:space-y-8">
             <div className="relative">
-              <div className="absolute -bottom-2 -right-2 w-full h-full border-2 border-red-500/30"></div>
-              <div className="relative bg-white/5 backdrop-blur-md border border-white/10 overflow-hidden">
+              <div className="absolute -bottom-2 -right-2 w-full h-full border-2 border-red-500/30 hidden md:block"></div>
+              <div className="relative bg-white/5 backdrop-blur-md border border-white/10 overflow-hidden rounded-lg md:rounded-none">
                 {field.images && field.images[0] && !imageError ? (
                   <img
                     src={field.images[0]}
                     alt={field.name}
-                    className="w-full h-96 object-cover"
+                    className="w-full h-64 md:h-96 object-cover"
                     onError={() => setImageError(true)}
                   />
                 ) : (
-                  <div className="w-full h-96 bg-gradient-to-br from-red-500/20 to-gray-500/20 flex items-center justify-center">
-                    <span className="text-8xl">⚽</span>
+                  <div className="w-full h-64 md:h-96 bg-gradient-to-br from-red-500/20 to-gray-500/20 flex items-center justify-center">
+                    <span className="text-6xl md:text-8xl">⚽</span>
                   </div>
                 )}
               </div>
             </div>
 
             <div className="relative">
-              <div className="absolute -top-4 -left-4 w-full h-full border-2 border-white/10"></div>
-              <div className="relative bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10">
-                <div className="mb-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h1 className="text-4xl md:text-5xl font-black text-white">{field.name.toUpperCase()}</h1>
-                    <div className="flex items-center gap-2 px-4 py-2 bg-gray-800/50 border border-white/20">
-                      <span className="text-yellow-400">★</span>
-                      <span className="text-white font-black">{averageRating > 0 ? averageRating.toFixed(1) : field.rating}</span>
-                      <span className="text-white/40 text-sm">({reviews.length} avis)</span>
+              <div className="absolute -top-4 -left-4 w-full h-full border-2 border-white/10 hidden md:block"></div>
+              <div className="relative bg-white/5 backdrop-blur-md border border-white/10 p-4 md:p-8 lg:p-10 rounded-lg md:rounded-none">
+                <div className="mb-4 md:mb-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white">{field.name.toUpperCase()}</h1>
+                    <div className="flex items-center gap-2 px-3 md:px-4 py-2 bg-gray-800/50 border border-white/20 rounded-lg">
+                      <span className="text-yellow-400 text-sm md:text-base">★</span>
+                      <span className="text-white font-black text-sm md:text-base">{averageRating > 0 ? averageRating.toFixed(1) : field.rating}</span>
+                      <span className="text-white/40 text-xs md:text-sm">({reviews.length} avis)</span>
                     </div>
                   </div>
-                  <p className="text-white/60 text-lg font-light flex items-center">
+                  <p className="text-white/60 text-base md:text-lg font-light flex items-center">
                     <span className="mr-2">📍</span>
                     {field.location}
                   </p>
                 </div>
 
-                <div className="pt-6 border-t border-white/10">
-                  <h2 className="text-2xl font-black text-white mb-4 uppercase">Description</h2>
-                  <p className="text-white/70 leading-relaxed font-light">{field.description}</p>
+                <div className="pt-4 md:pt-6 border-t border-white/10">
+                  <h2 className="text-xl md:text-2xl font-black text-white mb-3 md:mb-4 uppercase">Description</h2>
+                  <p className="text-white/70 leading-relaxed font-light text-sm md:text-base">{field.description}</p>
                 </div>
 
-                <div className="pt-6 border-t border-white/10">
-                  <h2 className="text-2xl font-black text-white mb-4 uppercase">Équipements</h2>
-                  <div className="flex flex-wrap gap-3">
+                <div className="pt-4 md:pt-6 border-t border-white/10">
+                  <h2 className="text-xl md:text-2xl font-black text-white mb-3 md:mb-4 uppercase">Équipements</h2>
+                  <div className="flex flex-wrap gap-2 md:gap-3">
                     {field.facilities.map((facility) => (
                       <span
                         key={facility}
-                        className="px-4 py-2 bg-red-500/20 text-red-300 border border-red-500/30 text-sm font-mono uppercase"
+                        className="px-3 md:px-4 py-1.5 md:py-2 bg-red-500/20 text-red-300 border border-red-500/30 text-xs md:text-sm font-mono uppercase rounded"
                       >
                         {facility}
                       </span>
@@ -320,10 +323,10 @@ export default function FieldDetailPage() {
                   </div>
                 </div>
 
-                <div className="pt-6 border-t border-white/10 grid grid-cols-2 gap-6">
+                <div className="pt-4 md:pt-6 border-t border-white/10 grid grid-cols-2 gap-4 md:gap-6">
                   <div>
-                    <div className="text-sm text-white/40 font-mono uppercase mb-2">Capacité</div>
-                    <div className="text-3xl font-black text-white">{field.capacity} joueurs</div>
+                    <div className="text-xs md:text-sm text-white/40 font-mono uppercase mb-2">Capacité</div>
+                    <div className="text-2xl md:text-3xl font-black text-white">{field.capacity} joueurs</div>
                   </div>
                   <div>
                     <PriceDisplay 
@@ -363,48 +366,61 @@ export default function FieldDetailPage() {
 
             {/* Reviews Section */}
             <div className="relative">
-              <div className="absolute -top-4 -right-4 w-full h-full border-2 border-red-500/20"></div>
-              <div className="relative bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10">
-                <h2 className="text-2xl font-black text-white mb-6 uppercase">Avis des clients</h2>
+              <div className="absolute -top-4 -right-4 w-full h-full border-2 border-red-500/20 hidden md:block"></div>
+              <div className="relative bg-white/5 backdrop-blur-md border border-white/10 p-4 md:p-8 lg:p-10 rounded-lg md:rounded-none">
+                <h2 className="text-xl md:text-2xl font-black text-white mb-4 md:mb-6 uppercase">Avis des clients</h2>
                 
                 {/* Average Rating Display */}
-                <div className="flex items-center gap-4 mb-8 pb-6 border-b border-white/10">
-                  <div className="text-5xl font-black text-white">{averageRating > 0 ? averageRating.toFixed(1) : '—'}</div>
+                <div className="flex items-center gap-3 md:gap-4 mb-6 md:mb-8 pb-4 md:pb-6 border-b border-white/10">
+                  <div className="text-4xl md:text-5xl font-black text-white">{averageRating > 0 ? averageRating.toFixed(1) : '—'}</div>
                   <div>
                     <StarRating rating={Math.round(averageRating)} />
-                    <p className="text-white/60 text-sm mt-1">{reviews.length} avis</p>
+                    <p className="text-white/60 text-xs md:text-sm mt-1">{reviews.length} avis</p>
                   </div>
                 </div>
 
                 {/* Leave a Review Button */}
-                {user && !userHasReviewed && (
-                  <div className="mb-8 pb-6 border-b border-white/10 text-center">
+                {!userHasReviewed && (
+                  <div className="mb-6 md:mb-8 pb-4 md:pb-6 border-b border-white/10 text-center">
                     <button
-                      onClick={() => setShowReviewModal(true)}
-                      className="px-8 py-4 bg-gradient-to-r from-red-600 to-red-700 text-white font-black hover:from-red-700 hover:to-red-800 transition-all rounded-xl shadow-lg hover:shadow-xl hover:shadow-red-500/30 transform hover:scale-105"
+                      onClick={() => {
+                        setEditingReview(null);
+                        setShowReviewModal(true);
+                      }}
+                      className="w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 bg-gradient-to-r from-red-600 to-red-700 text-white font-black hover:from-red-700 hover:to-red-800 transition-all rounded-xl shadow-lg hover:shadow-xl hover:shadow-red-500/30 transform hover:scale-105 text-sm md:text-base"
                     >
                       ✍️ Laisser un avis
                     </button>
+                    {!user && (
+                      <p className="text-white/50 text-xs md:text-sm mt-3">
+                        Vous pouvez laisser un avis sans vous connecter
+                      </p>
+                    )}
                   </div>
                 )}
 
-                {!user && (
+                {userHasReviewed && user && (
                   <div className="mb-8 pb-6 border-b border-white/10 text-center">
-                    <p className="text-white/60 mb-4">Connectez-vous pour laisser un avis</p>
-                    <Link href="/auth/login">
-                      <button className="px-6 py-3 bg-red-600 text-white font-black hover:bg-red-700 transition-colors rounded-xl">
-                        SE CONNECTER
-                      </button>
-                    </Link>
-                  </div>
-                )}
-
-                {userHasReviewed && (
-                  <div className="mb-8 pb-6 border-b border-white/10 text-center">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/20 border border-green-500/30 rounded-full">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-500/20 border border-green-500/30 rounded-full mb-3">
                       <span className="text-green-400">✓</span>
                       <p className="text-green-400 font-light">Vous avez déjà laissé un avis</p>
                     </div>
+                    <button
+                      onClick={() => {
+                        const userReview = reviews.find((r: any) => r.user_id === user.id);
+                        if (userReview) {
+                          setEditingReview({
+                            id: userReview.id,
+                            rating: userReview.rating,
+                            comment: userReview.comment,
+                          });
+                          setShowReviewModal(true);
+                        }
+                      }}
+                      className="px-6 py-3 bg-white/10 text-white font-black hover:bg-white/20 transition-colors rounded-xl border border-white/20"
+                    >
+                      ✏️ Modifier mon avis
+                    </button>
                   </div>
                 )}
 
@@ -414,26 +430,48 @@ export default function FieldDetailPage() {
                 ) : (
                   <div className="space-y-6">
                     {reviews.map((review: any) => (
-                      <div key={review.id} className="bg-gray-800/30 p-6 rounded-lg">
+                      <div key={review.id} className="bg-gray-800/30 p-4 md:p-6 rounded-lg">
                         <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-black">
+                          <div className="flex items-center gap-3 flex-1">
+                            <div className="w-10 h-10 bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-black flex-shrink-0">
                               {review.user?.name?.charAt(0)?.toUpperCase() || '?'}
                             </div>
-                            <div>
-                              <div className="text-white font-black">{review.user?.name || 'Anonyme'}</div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <div className="text-white font-black">{review.user?.name || 'Anonyme'}</div>
+                                {review.user_id && user && review.user_id === user.id && (
+                                  <button
+                                    onClick={() => {
+                                      setEditingReview({
+                                        id: review.id,
+                                        rating: review.rating,
+                                        comment: review.comment,
+                                      });
+                                      setShowReviewModal(true);
+                                    }}
+                                    className="text-xs text-red-400 hover:text-red-300 font-light underline"
+                                  >
+                                    Modifier
+                                  </button>
+                                )}
+                              </div>
                               <div className="text-white/40 text-xs">
                                 {new Date(review.created_at).toLocaleDateString('fr-FR', {
                                   year: 'numeric',
                                   month: 'long',
                                   day: 'numeric'
                                 })}
+                                {review.updated_at && review.updated_at !== review.created_at && (
+                                  <span className="ml-2 text-white/30">(modifié)</span>
+                                )}
                               </div>
                             </div>
                           </div>
-                          <StarRating rating={review.rating} />
+                          <div className="flex-shrink-0">
+                            <StarRating rating={review.rating} />
+                          </div>
                         </div>
-                        <p className="text-white/80 font-light">{review.comment}</p>
+                        <p className="text-white/80 font-light leading-relaxed">{review.comment}</p>
                       </div>
                     ))}
                   </div>
@@ -443,12 +481,12 @@ export default function FieldDetailPage() {
           </div>
 
           <div className="lg:col-span-5">
-            <div className="sticky top-24">
+            <div className="sticky top-6 md:top-24">
               <div className="relative">
-                <div className="absolute -bottom-4 -left-4 w-full h-full border-2 border-gray-500/30"></div>
-                <div className="relative bg-white/5 backdrop-blur-md border border-white/10 p-8 md:p-10">
-                  <h2 className="text-3xl font-black text-white mb-4 uppercase">RÉSERVER</h2>
-                  <p className="text-white/60 text-sm mb-8 font-light">
+                <div className="absolute -bottom-4 -left-4 w-full h-full border-2 border-gray-500/30 hidden md:block"></div>
+                <div className="relative bg-white/5 backdrop-blur-md border border-white/10 p-4 md:p-8 lg:p-10 rounded-lg md:rounded-none">
+                  <h2 className="text-2xl md:text-3xl font-black text-white mb-3 md:mb-4 uppercase">RÉSERVER</h2>
+                  <p className="text-white/60 text-xs md:text-sm mb-6 md:mb-8 font-light">
                     📅 Réservation disponible pour les 2 prochaines semaines uniquement
                   </p>
 
@@ -616,9 +654,13 @@ export default function FieldDetailPage() {
       {/* Review Modal */}
       <ReviewModal
         isOpen={showReviewModal}
-        onClose={() => setShowReviewModal(false)}
+        onClose={() => {
+          setShowReviewModal(false);
+          setEditingReview(null);
+        }}
         fieldId={params.id as string}
         onReviewSubmitted={fetchReviews}
+        editingReview={editingReview}
       />
     </div>
   );

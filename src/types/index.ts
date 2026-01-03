@@ -57,12 +57,14 @@ export interface BookingWithField extends Booking {
 export interface Review {
   id: string;
   field_id: string;
-  user_id: string;
+  user_id: string | null; // null for anonymous reviews
   rating: number;
   comment: string;
   created_at: string;
   updated_at: string;
-  user?: User;
+  user?: User | null;
+  reviewer_name?: string; // For anonymous reviews
+  reviewer_email?: string | null; // For anonymous reviews
 }
 
 export interface BlockedSlot {

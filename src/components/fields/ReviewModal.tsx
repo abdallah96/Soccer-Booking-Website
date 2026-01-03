@@ -8,6 +8,11 @@ interface ReviewModalProps {
   onClose: () => void;
   fieldId: string;
   onReviewSubmitted: () => void;
+  editingReview?: {
+    id: string;
+    rating: number;
+    comment: string;
+  } | null;
 }
 
 // Star Rating Component
@@ -37,18 +42,28 @@ const StarRating = ({ rating, onRate, interactive = false }: { rating: number; o
   );
 };
 
-export function ReviewModal({ isOpen, onClose, fieldId, onReviewSubmitted }: ReviewModalProps) {
+export function ReviewModal({ isOpen, onClose, fieldId, onReviewSubmitted, editingReview }: ReviewModalProps) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
+  const [reviewerName, setReviewerName] = useState('');
+  const [reviewerEmail, setReviewerEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [isAnonymous, setIsAnonymous] = useState(false);
 
-  // Reset form when modal closes
+  // Reset form when modal closes or editing review changes
   useEffect(() => {
     if (!isOpen) {
       setRating(0);
       setComment('');
+      setReviewerName('');
+      setReviewerEmail('');
+      setIsAnonymous(false);
+    } else if (editingReview) {
+      setRating(editingReview.rating);
+      setComment(editingReview.comment);
+      setIsAnonymous(false); // Can't edit anonymous reviews
     }
-  }, [isOpen]);
+  }, [isOpen, editingReview]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,22 +78,41 @@ export function ReviewModal({ isOpen, onClose, fieldId, onReviewSubmitted }: Rev
       return;
     }
 
+    // Validate anonymous reviewer name
+    if (isAnonymous && (!reviewerName.trim() || reviewerName.trim().length < 2)) {
+      toast.error('Veuillez entrer un nom (minimum 2 caractères)');
+      return;
+    }
+
     setSubmitting(true);
     try {
-      const response = await fetch('/api/reviews', {
-        method: 'POST',
+      const url = editingReview 
+        ? `/api/reviews/${editingReview.id}`
+        : '/api/reviews';
+      const method = editingReview ? 'PUT' : 'POST';
+      
+      const body: any = {
+        field_id: fieldId,
+        rating,
+        comment: comment.trim(),
+      };
+      
+      // Add anonymous reviewer info if not logged in
+      if (isAnonymous && !editingReview) {
+        body.reviewer_name = reviewerName.trim();
+        body.reviewer_email = reviewerEmail.trim() || null;
+      }
+
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
-          field_id: fieldId,
-          rating,
-          comment: comment.trim(),
-        }),
+        body: JSON.stringify(body),
       });
 
       const result = await response.json();
       if (response.ok) {
-        toast.success('Merci pour votre avis !');
+        toast.success(editingReview ? 'Avis mis à jour !' : 'Merci pour votre avis !');
         onReviewSubmitted();
         onClose();
       } else {
@@ -111,10 +145,10 @@ export function ReviewModal({ isOpen, onClose, fieldId, onReviewSubmitted }: Rev
           <div className="flex items-center justify-between mb-8">
             <div>
               <h2 className="text-3xl md:text-4xl font-black text-white mb-2">
-                Laissez-nous un commentaire
+                {editingReview ? 'Modifier votre avis' : 'Laissez-nous un commentaire'}
               </h2>
               <p className="text-white/60 font-light">
-                Partagez votre expérience sur ce terrain
+                {editingReview ? 'Mettez à jour votre commentaire' : 'Partagez votre expérience sur ce terrain'}
               </p>
             </div>
             <button
@@ -168,6 +202,57 @@ export function ReviewModal({ isOpen, onClose, fieldId, onReviewSubmitted }: Rev
               </p>
             </div>
 
+            {/* Anonymous Review Fields (only for new reviews, not editing) */}
+            {!editingReview && (
+              <div className="space-y-4 pt-4 border-t border-white/10">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="anonymous"
+                    checked={isAnonymous}
+                    onChange={(e) => setIsAnonymous(e.target.checked)}
+                    className="w-5 h-5 rounded border-white/20 bg-gray-800 text-red-600 focus:ring-red-500"
+                  />
+                  <label htmlFor="anonymous" className="text-white/80 text-sm cursor-pointer">
+                    Je ne suis pas connecté(e)
+                  </label>
+                </div>
+                
+                {isAnonymous && (
+                  <div className="space-y-3 pl-8 animate-fadeIn">
+                    <div>
+                      <label className="block text-sm font-black text-white/80 mb-2 uppercase tracking-tight font-mono">
+                        Votre nom *
+                      </label>
+                      <input
+                        type="text"
+                        value={reviewerName}
+                        onChange={(e) => setReviewerName(e.target.value)}
+                        placeholder="Votre nom"
+                        className="w-full px-4 py-3 bg-gray-800/50 border-2 border-white/20 text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 rounded-xl transition-all placeholder:text-white/30"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-black text-white/80 mb-2 uppercase tracking-tight font-mono">
+                        Email (optionnel)
+                      </label>
+                      <input
+                        type="email"
+                        value={reviewerEmail}
+                        onChange={(e) => setReviewerEmail(e.target.value)}
+                        placeholder="votre@email.com"
+                        className="w-full px-4 py-3 bg-gray-800/50 border-2 border-white/20 text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/30 rounded-xl transition-all placeholder:text-white/30"
+                      />
+                      <p className="text-xs text-white/40 mt-1 font-light">
+                        Optionnel, pour vérification uniquement
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Buttons */}
             <div className="flex gap-4 pt-4">
               <button
@@ -179,11 +264,13 @@ export function ReviewModal({ isOpen, onClose, fieldId, onReviewSubmitted }: Rev
               </button>
               <button
                 type="submit"
-                disabled={submitting || rating === 0 || comment.trim().length < 10}
+                disabled={submitting || rating === 0 || comment.trim().length < 10 || (isAnonymous && (!reviewerName.trim() || reviewerName.trim().length < 2))}
                 className="flex-1 px-6 py-4 bg-red-600 text-white font-black hover:bg-red-700 transition-colors rounded-xl disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group"
               >
                 <span className="relative z-10">
-                  {submitting ? 'Publication...' : 'Publier mon avis'}
+                  {submitting 
+                    ? (editingReview ? 'Mise à jour...' : 'Publication...') 
+                    : (editingReview ? 'Mettre à jour' : 'Publier mon avis')}
                 </span>
                 {!submitting && (
                   <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />

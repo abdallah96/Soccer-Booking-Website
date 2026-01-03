@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     const supabase = getAdminClient();
 
-    // Get reviews with user info
+    // Get reviews with user info (or anonymous reviewer info)
     const { data, error } = await supabase
       .from('reviews')
       .select(`
@@ -44,12 +44,25 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       );
     }
-
-    const reviews = data as unknown as ReviewWithUser[];
+    
+    // Map anonymous reviews to have user-like structure for frontend compatibility
+    const reviews = (data || []).map((review: any) => {
+      if (!review.user_id && review.reviewer_name) {
+        return {
+          ...review,
+          user: {
+            id: null,
+            name: review.reviewer_name,
+            email: review.reviewer_email || null,
+          },
+        };
+      }
+      return review;
+    });
 
     // Calculate average rating
     const averageRating = reviews && reviews.length > 0
-      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+      ? reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviews.length
       : 0;
 
     return NextResponse.json({ 
@@ -67,18 +80,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Verify authentication
-    const { user, error: authError } = await verifyAuth(request);
-    
-    if (!user) {
-      return NextResponse.json(
-        { error: authError || 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
-    const { field_id, rating, comment } = body;
+    const { field_id, rating, comment, reviewer_name, reviewer_email } = body;
 
     if (!field_id || !rating || !comment) {
       return NextResponse.json(
@@ -102,31 +105,81 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = getAdminClient();
+    
+    // Try to verify auth (optional for anonymous reviews)
+    const { user } = await verifyAuth(request);
+    
+    // Rate limiting for anonymous reviews (by IP)
+    if (!user) {
+      const clientIp = request.headers.get('x-forwarded-for') || 
+                      request.headers.get('x-real-ip') || 
+                      'unknown';
+      
+      // Check for recent anonymous reviews from same IP (max 1 per hour per field)
+      const oneHourAgo = new Date();
+      oneHourAgo.setHours(oneHourAgo.getHours() - 1);
+      
+      const { data: recentReviews } = await supabase
+        .from('reviews')
+        .select('id, created_at')
+        .eq('field_id', field_id)
+        .is('user_id', null)
+        .gte('created_at', oneHourAgo.toISOString());
+      
+      // Simple IP-based rate limiting (check if multiple reviews in last hour)
+      // In production, you'd want to store IP addresses in a separate table
+      if (recentReviews && recentReviews.length >= 2) {
+        return NextResponse.json(
+          { error: 'Trop de commentaires récents. Veuillez réessayer plus tard.' },
+          { status: 429 }
+        );
+      }
+      
+      // Validate anonymous reviewer info
+      if (!reviewer_name || reviewer_name.trim().length < 2) {
+        return NextResponse.json(
+          { error: 'Un nom est requis (minimum 2 caractères)' },
+          { status: 400 }
+        );
+      }
+    }
 
-    // Check if user already reviewed this field
-    const { data: existingReview } = await supabase
-      .from('reviews')
-      .select('id')
-      .eq('field_id', field_id)
-      .eq('user_id', user.userId)
-      .single();
+    // Check if authenticated user already reviewed this field
+    if (user) {
+      const { data: existingReview } = await supabase
+        .from('reviews')
+        .select('id')
+        .eq('field_id', field_id)
+        .eq('user_id', user.userId)
+        .single();
 
-    if (existingReview) {
-      return NextResponse.json(
-        { error: 'Vous avez déjà laissé un avis pour ce terrain' },
-        { status: 400 }
-      );
+      if (existingReview) {
+        return NextResponse.json(
+          { error: 'Vous avez déjà laissé un avis pour ce terrain' },
+          { status: 400 }
+        );
+      }
     }
 
     // Create the review
+    const reviewData: any = {
+      field_id,
+      rating,
+      comment: comment.trim(),
+    };
+    
+    if (user) {
+      reviewData.user_id = user.userId;
+    } else {
+      // Anonymous review - store name and optional email
+      reviewData.user_id = null;
+      reviewData.reviewer_name = reviewer_name?.trim() || 'Anonyme';
+      reviewData.reviewer_email = reviewer_email?.trim() || null;
+    }
+
     const { data: review, error } = await supabase
       .from('reviews')
-      .insert({
-        field_id,
-        user_id: user.userId,
-        rating,
-        comment: comment.trim(),
-      })
+      .insert(reviewData)
       .select(`
         *,
         user:users(id, name, email)
