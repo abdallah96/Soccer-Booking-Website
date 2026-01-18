@@ -47,6 +47,11 @@ export default function FieldDetailPage() {
   const [blockedSlots, setBlockedSlots] = useState<Set<string>>(new Set());
   const [openWeeks, setOpenWeeks] = useState<Set<string>>(new Set());
   const [calendarBookingInfo, setCalendarBookingInfo] = useState<Record<string, { total: number; booked: number; isFullyBooked: boolean }>>({});
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [bookingSlotDate, setBookingSlotDate] = useState('');
+  const [bookingSlotTime, setBookingSlotTime] = useState('');
+  const [guestBookingData, setGuestBookingData] = useState({ phone: '', name: '', email: '' });
+  const [isBooking, setIsBooking] = useState(false);
   
   // Reviews state
   const [reviews, setReviews] = useState<any[]>([]);
@@ -166,30 +171,54 @@ export default function FieldDetailPage() {
     }
   }, [field?.id]);
 
+  const handleTimeSlotClick = (time: string) => {
+    if (!selectedDate) {
+      toast.error('Veuillez d\'abord sélectionner une date');
+      return;
+    }
+    setBookingSlotDate(selectedDate);
+    setBookingSlotTime(time);
+    setSelectedStartTime(time);
+    setShowBookingModal(true);
+  };
+
   const handleBooking = async () => {
-    if (!user) {
-      toast.error('Vous devez être connecté pour réserver');
-      router.push('/auth/login');
+    const date = bookingSlotDate || selectedDate;
+    const time = bookingSlotTime || selectedStartTime;
+
+    if (!date || !time) {
+      toast.error('Date et heure requises');
       return;
     }
 
-    if (!selectedDate || !selectedStartTime) {
-      toast.error('Veuillez sélectionner une date et une heure de début');
+    // For guest booking, phone is required
+    if (!user && !guestBookingData.phone) {
+      toast.error('Numéro de téléphone requis');
       return;
     }
 
+    setIsBooking(true);
     try {
+      const bookingPayload: any = {
+        field_id: field?.id,
+        date: date,
+        start_time: time,
+        duration: selectedDuration,
+        payment_method: selectedPaymentMethod,
+      };
+
+      // Add guest info if not logged in
+      if (!user) {
+        bookingPayload.phone = guestBookingData.phone;
+        if (guestBookingData.name) bookingPayload.name = guestBookingData.name;
+        if (guestBookingData.email) bookingPayload.email = guestBookingData.email;
+      }
+
       const response = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
-          field_id: field?.id,
-          date: selectedDate,
-          start_time: selectedStartTime,
-          duration: selectedDuration,
-          payment_method: selectedPaymentMethod,
-        }),
+        body: JSON.stringify(bookingPayload),
       });
 
       const result = await response.json();
@@ -208,24 +237,44 @@ export default function FieldDetailPage() {
         success: true,
         booking_id: result.booking?.id,
         field_id: field?.id,
-        date: selectedDate,
-        start_time: selectedStartTime,
+        date: date,
+        start_time: time,
         duration: selectedDuration,
         payment_method: selectedPaymentMethod,
         amount: calculatedPrice,
       });
 
       toast.success('Réservation créée avec succès !');
-      router.push('/my-bookings');
+      setShowBookingModal(false);
+      setGuestBookingData({ phone: '', name: '', email: '' });
+      
+      // Refresh availability
+      if (date) {
+        const response = await fetch(
+          `/api/bookings/availability?field_id=${field?.id}&date=${date}`
+        );
+        const data = await response.json();
+        if (data.bookedSlots) {
+          setBookedSlots(new Set(data.bookedSlots));
+        }
+      }
+
+      // Redirect logged-in users to my-bookings, others stay on page
+      if (user) {
+        router.push('/my-bookings');
+      }
     } catch (error) {
       toast.error('Erreur lors de la réservation');
+    } finally {
+      setIsBooking(false);
     }
   };
 
 
   // Calculate price dynamically
-  const calculatedPrice = selectedStartTime && field
-    ? calculateBookingPrice(selectedStartTime, selectedDuration, field.price_per_hour || PRICING.DEFAULT_DAY_RATE)
+  const timeForPrice = bookingSlotTime || selectedStartTime;
+  const calculatedPrice = timeForPrice && field
+    ? calculateBookingPrice(timeForPrice, selectedDuration, field.price_per_hour || PRICING.DEFAULT_DAY_RATE)
     : 0;
 
   // Week-limited calendar: only current week + next week (max 14 days)
@@ -538,16 +587,6 @@ export default function FieldDetailPage() {
                     📅 Réservation disponible pour les 2 prochaines semaines uniquement
                   </p>
 
-                  {!user ? (
-                    <div className="space-y-6">
-                      <p className="text-white/60 font-light">Vous devez être connecté pour réserver un terrain.</p>
-                      <Link href="/auth/login">
-                        <button className="w-full px-6 py-4 bg-red-600 text-white font-black hover:bg-red-700 transition-colors">
-                        SE CONNECTER
-                      </button>
-                    </Link>
-                  </div>
-                ) : (
                   <div className="space-y-6">
                     <div>
                       <label className="block text-sm font-black text-white/80 mb-2 uppercase tracking-tight font-mono">
@@ -577,7 +616,7 @@ export default function FieldDetailPage() {
                           return (
                             <button
                               key={hour}
-                              onClick={() => !isDisabled && setSelectedStartTime(hour)}
+                              onClick={() => !isDisabled && handleTimeSlotClick(hour)}
                               disabled={isDisabled}
                               className={`px-3 py-2 border-2 text-xs font-light transition-all relative ${
                                 isDisabled
@@ -585,10 +624,10 @@ export default function FieldDetailPage() {
                                   : selectedStartTime === hour
                                     ? 'border-red-500 bg-red-500/20 text-red-300'
                                   : isDay
-                                    ? 'border-red-500/30 bg-gray-800/50 text-white/60 hover:border-red-500/50'
-                                    : 'border-gray-500/30 bg-gray-800/50 text-white/60 hover:border-gray-500/50'
+                                    ? 'border-red-500/30 bg-gray-800/50 text-white/60 hover:border-red-500/50 hover:scale-105'
+                                    : 'border-gray-500/30 bg-gray-800/50 text-white/60 hover:border-gray-500/50 hover:scale-105'
                               }`}
-                                title={isBooked ? 'Créneau réservé' : isBlocked ? 'Créneau non disponible' : ''}
+                                title={isBooked ? 'Créneau réservé' : isBlocked ? 'Créneau non disponible' : 'Cliquez pour réserver'}
                             >
                               {hour}
                                 {(isBooked || isBlocked) && (
@@ -692,13 +731,220 @@ export default function FieldDetailPage() {
                       </button>
                     </div>
                   </div>
-                )}
               </div>
             </div>
           </div>
         </div>
       </div>
       </div>
+
+      {/* Booking Modal */}
+      {showBookingModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-gray-900 w-full sm:max-w-lg sm:rounded-2xl rounded-t-3xl max-h-[90vh] my-auto overflow-y-auto">
+            <div className="sticky top-0 bg-gray-900 p-4 border-b border-white/10 flex items-center justify-between z-10">
+              <h2 className="text-xl font-black text-white">Réserver</h2>
+              <button
+                onClick={() => {
+                  setShowBookingModal(false);
+                  setBookingSlotDate('');
+                  setBookingSlotTime('');
+                  setGuestBookingData({ phone: '', name: '', email: '' });
+                }}
+                className="text-white/50 text-2xl"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="p-4 md:p-6 space-y-6">
+              {/* Booking Summary */}
+              <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-white/60">Date</span>
+                  <span className="text-white font-medium">
+                    {bookingSlotDate && new Date(bookingSlotDate).toLocaleDateString('fr-FR', {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long'
+                    })}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-white/60">Heure</span>
+                  <span className="text-white font-medium">{bookingSlotTime}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-white/60">Terrain</span>
+                  <span className="text-white font-medium">{field?.name}</span>
+                </div>
+              </div>
+
+              {!user ? (
+                /* Guest Booking Form */
+                <form onSubmit={(e) => { e.preventDefault(); handleBooking(); }} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-black text-white/80 mb-2">
+                      Téléphone * <span className="text-white/40 font-normal">(requis)</span>
+                    </label>
+                    <input
+                      type="tel"
+                      value={guestBookingData.phone}
+                      onChange={(e) => setGuestBookingData({ ...guestBookingData, phone: e.target.value })}
+                      placeholder="Ex: 77 123 45 67"
+                      required
+                      className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-black text-white/80 mb-2">
+                      Nom <span className="text-white/40 font-normal">(optionnel)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={guestBookingData.name}
+                      onChange={(e) => setGuestBookingData({ ...guestBookingData, name: e.target.value })}
+                      placeholder="Votre nom"
+                      className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-black text-white/80 mb-2">
+                      Email <span className="text-white/40 font-normal">(optionnel)</span>
+                    </label>
+                    <input
+                      type="email"
+                      value={guestBookingData.email}
+                      onChange={(e) => setGuestBookingData({ ...guestBookingData, email: e.target.value })}
+                      placeholder="votre@email.com"
+                      className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
+                    />
+                  </div>
+
+                  {/* Duration & Payment for guests */}
+                  <div>
+                    <label className="block text-sm font-black text-white/80 mb-2">Durée</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[{ value: 60, label: '1 Heure' }, { value: 90, label: '1h30' }].map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setSelectedDuration(opt.value as 60 | 90)}
+                          className={`px-4 py-3 border-2 text-sm font-light transition-all rounded-lg ${
+                            selectedDuration === opt.value
+                              ? 'border-red-500 bg-red-500/20 text-red-300'
+                              : 'border-white/20 bg-gray-800/50 text-white/60'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-black text-white/80 mb-2">Paiement</label>
+                    <div className="space-y-2">
+                      {PAYMENT_METHODS.map((method) => (
+                        <button
+                          key={method.id}
+                          type="button"
+                          onClick={() => setSelectedPaymentMethod(method.id as 'wave' | 'orange_money' | 'cash')}
+                          className={`w-full px-4 py-3 border-2 text-left font-light transition-all rounded-lg ${
+                            selectedPaymentMethod === method.id
+                              ? 'border-red-500 bg-red-500/20 text-red-300'
+                              : 'border-white/20 bg-gray-800/50 text-white/60'
+                          }`}
+                        >
+                          {method.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-white/10">
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-white/80 font-medium">Total</span>
+                      <span className="text-2xl font-black text-red-500">
+                        {calculatedPrice > 0 ? formatPrice(calculatedPrice) : '---'}
+                      </span>
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={isBooking || !guestBookingData.phone}
+                      className="w-full px-6 py-4 bg-red-600 text-white font-black rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-700 transition-colors"
+                    >
+                      {isBooking ? 'Réservation...' : 'Confirmer la réservation'}
+                    </button>
+                    <p className="text-xs text-white/40 mt-3 text-center">
+                      Un compte sera créé automatiquement avec votre numéro de téléphone
+                    </p>
+                  </div>
+                </form>
+              ) : (
+                /* Logged-in User Quick Confirm */
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-black text-white/80 mb-2">Durée</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[{ value: 60, label: '1 Heure' }, { value: 90, label: '1h30' }].map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={() => setSelectedDuration(opt.value as 60 | 90)}
+                          className={`px-4 py-3 border-2 text-sm font-light transition-all rounded-lg ${
+                            selectedDuration === opt.value
+                              ? 'border-red-500 bg-red-500/20 text-red-300'
+                              : 'border-white/20 bg-gray-800/50 text-white/60'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-black text-white/80 mb-2">Paiement</label>
+                    <div className="space-y-2">
+                      {PAYMENT_METHODS.map((method) => (
+                        <button
+                          key={method.id}
+                          onClick={() => setSelectedPaymentMethod(method.id as 'wave' | 'orange_money' | 'cash')}
+                          className={`w-full px-4 py-3 border-2 text-left font-light transition-all rounded-lg ${
+                            selectedPaymentMethod === method.id
+                              ? 'border-red-500 bg-red-500/20 text-red-300'
+                              : 'border-white/20 bg-gray-800/50 text-white/60'
+                          }`}
+                        >
+                          {method.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-white/10">
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-white/80 font-medium">Total</span>
+                      <span className="text-2xl font-black text-red-500">
+                        {calculatedPrice > 0 ? formatPrice(calculatedPrice) : '---'}
+                      </span>
+                    </div>
+                    <button
+                      onClick={handleBooking}
+                      disabled={isBooking || !bookingSlotDate || !bookingSlotTime}
+                      className="w-full px-6 py-4 bg-red-600 text-white font-black rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-red-700 transition-colors"
+                    >
+                      {isBooking ? 'Réservation...' : 'Confirmer la réservation'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Review Modal */}
       <ReviewModal

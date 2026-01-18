@@ -12,7 +12,7 @@ async function handleGet(request: AuthenticatedRequest) {
       .from('reviews')
       .select(`
         *,
-        user:users(id, name, email, phone),
+        user:users!reviews_user_id_fkey(id, name, email, phone),
         admin:users!reviews_admin_id_fkey(id, name, email),
         field:fields(id, name)
       `)

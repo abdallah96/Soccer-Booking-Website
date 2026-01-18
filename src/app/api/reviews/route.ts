@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       .from('reviews')
       .select(`
         *,
-        user:users(id, name, email),
+        user:users!reviews_user_id_fkey(id, name, email),
         admin:users!reviews_admin_id_fkey(id, name, email)
       `)
       .eq('field_id', fieldId)
@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
       .insert(reviewData)
       .select(`
         *,
-        user:users(id, name, email)
+        user:users!reviews_user_id_fkey(id, name, email)
       `)
       .single();
 

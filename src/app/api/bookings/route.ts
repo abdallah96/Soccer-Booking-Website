@@ -1,23 +1,88 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getAdminClient } from '@/lib/supabase/admin';
 import { calculateBookingPrice } from '@/lib/utils/pricing';
 import { trackEventServer } from '@/lib/utils/analytics-server';
 import { PRICING } from '@/lib/config/constants';
-import { requireAuth, AuthenticatedRequest } from '@/lib/middleware/auth';
-import { sanitizeUUID, sanitizeDate, sanitizeTime, sanitizeNumber } from '@/lib/utils/sanitize';
+import { requireAuth, AuthenticatedRequest, verifyAuth } from '@/lib/middleware/auth';
+import { sanitizeUUID, sanitizeDate, sanitizeTime, sanitizeNumber, sanitizeString, sanitizePhone, sanitizeEmail } from '@/lib/utils/sanitize';
+import bcrypt from 'bcryptjs';
 
-async function handlePost(request: AuthenticatedRequest) {
+async function handlePost(request: NextRequest) {
   try {
     const body = await request.json();
-    const { field_id, date, start_time, duration, payment_method } = body;
+    const { field_id, date, start_time, duration = 60, payment_method = 'wave', phone, name, email } = body;
 
-    // Get user_id from authenticated user (secure)
-    const user_id = request.user!.userId;
+    // Check if user is authenticated
+    const { user } = await verifyAuth(request);
+    let user_id: string;
+
+    // If not authenticated, phone is required for guest booking
+    if (!user) {
+      if (!phone) {
+        return NextResponse.json(
+          { error: 'Numéro de téléphone requis pour la réservation' },
+          { status: 400 }
+        );
+      }
+
+      const sanitizedPhone = sanitizePhone(phone);
+      if (!sanitizedPhone || sanitizedPhone.length < 8) {
+        return NextResponse.json(
+          { error: 'Numéro de téléphone invalide' },
+          { status: 400 }
+        );
+      }
+
+      // Try to find user by phone or create new one
+      const adminSupabase = getAdminClient();
+      const { data: existingUser } = await adminSupabase
+        .from('users')
+        .select('id')
+        .or(`phone.eq.${sanitizedPhone},phone.eq.${sanitizedPhone.replace(/\s/g, '')}`)
+        .limit(1)
+        .single();
+
+      if (existingUser) {
+        user_id = existingUser.id;
+      } else {
+        // Create new user account
+        const tempPassword = Math.random().toString(36).slice(-12) + 'A1!';
+        const hashedPassword = await bcrypt.hash(tempPassword, 10);
+        const userEmail = email ? sanitizeEmail(email) : `${sanitizedPhone.replace(/\D/g, '')}@petitcamp.sn`;
+        const userName = name ? sanitizeString(name) : `Client ${sanitizedPhone.slice(-4)}`;
+
+        const { data: newUser, error: createError } = await adminSupabase
+          .from('users')
+          .insert({
+            email: userEmail,
+            name: userName,
+            phone: sanitizedPhone,
+            password_hash: hashedPassword,
+            role: 'user',
+          })
+          .select('id')
+          .single();
+
+        if (createError || !newUser) {
+          console.error('Error creating user:', createError);
+          return NextResponse.json(
+            { error: 'Erreur lors de la création du compte' },
+            { status: 500 }
+          );
+        }
+
+        user_id = newUser.id;
+      }
+    } else {
+      // Authenticated user
+      user_id = user.userId;
+    }
 
     // Validation and sanitization
-    if (!field_id || !date || !start_time || !duration || !payment_method) {
+    if (!field_id || !date || !start_time) {
       return NextResponse.json(
-        { error: 'Tous les champs sont requis' },
+        { error: 'Champs requis manquants' },
         { status: 400 }
       );
     }
@@ -211,7 +276,7 @@ async function handleGet(request: AuthenticatedRequest) {
 
 // Export handlers with auth middleware
 export async function POST(request: NextRequest) {
-  return requireAuth(request, handlePost);
+  return handlePost(request);
 }
 
 export async function GET(request: NextRequest) {
