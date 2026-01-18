@@ -172,27 +172,42 @@ export interface Database {
         Row: {
           id: string;
           field_id: string;
-          user_id: string;
+          user_id: string | null;
           rating: number;
           comment: string;
+          reviewer_name?: string | null;
+          reviewer_email?: string | null;
+          admin_reply?: string | null;
+          admin_id?: string | null;
+          admin_replied_at?: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
           field_id: string;
-          user_id: string;
+          user_id?: string | null;
           rating: number;
           comment: string;
+          reviewer_name?: string | null;
+          reviewer_email?: string | null;
+          admin_reply?: string | null;
+          admin_id?: string | null;
+          admin_replied_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
           field_id?: string;
-          user_id?: string;
+          user_id?: string | null;
           rating?: number;
           comment?: string;
+          reviewer_name?: string | null;
+          reviewer_email?: string | null;
+          admin_reply?: string | null;
+          admin_id?: string | null;
+          admin_replied_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };

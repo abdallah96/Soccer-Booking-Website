@@ -115,7 +115,7 @@ async function getMonthlyOverview(fieldId: string, monthStart: string, monthEnd:
       .eq('field_id', fieldId)
       .gte('date', monthStart)
       .lte('date', monthEnd)
-      .in('status', ['pending', 'pending_payment', 'confirmed']);
+      .in('status', ['pending', 'confirmed']);
 
     if (bookingsError) {
       console.error('Monthly overview fetch error:', bookingsError);

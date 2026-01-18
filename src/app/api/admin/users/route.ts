@@ -16,7 +16,7 @@ async function handleGet(request: AuthenticatedRequest) {
       .order('created_at', { ascending: false });
 
     // Filter by role if specified (for super_admin to see admins)
-    if (roleFilter) {
+    if (roleFilter && (roleFilter === 'admin' || roleFilter === 'user')) {
       query = query.eq('role', roleFilter);
     }
 
