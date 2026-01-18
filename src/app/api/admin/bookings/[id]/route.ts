@@ -29,9 +29,16 @@ async function handlePut(
 
     const supabase = getAdminClient();
 
+    // Update booking with payment status if confirming
+    const updateData: Record<string, any> = { status };
+    if (status === 'confirmed') {
+      updateData.payment_status = 'paid';
+      updateData.payment_date = new Date().toISOString();
+    }
+
     const { data: booking, error } = await supabase
       .from('bookings')
-      .update({ status })
+      .update(updateData)
       .eq('id', sanitizedBookingId)
       .select()
       .single();

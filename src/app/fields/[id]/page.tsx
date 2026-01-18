@@ -46,6 +46,7 @@ export default function FieldDetailPage() {
   const [bookedSlots, setBookedSlots] = useState<Set<string>>(new Set());
   const [blockedSlots, setBlockedSlots] = useState<Set<string>>(new Set());
   const [openWeeks, setOpenWeeks] = useState<Set<string>>(new Set());
+  const [calendarBookingInfo, setCalendarBookingInfo] = useState<Record<string, { total: number; booked: number; isFullyBooked: boolean }>>({});
   
   // Reviews state
   const [reviews, setReviews] = useState<any[]>([]);
@@ -61,6 +62,36 @@ export default function FieldDetailPage() {
       fetchWeekAvailability();
     }
   }, [params.id]);
+
+  // Fetch calendar booking info when field loads
+  useEffect(() => {
+    const fetchCalendarBookingInfo = async () => {
+      if (!field?.id) return;
+      
+      // Get dates for current month and next month
+      const today = new Date();
+      const monthStart = today.toISOString().split('T')[0];
+      const monthEnd = new Date(today);
+      monthEnd.setDate(monthEnd.getDate() + 60); // 2 months ahead
+      const monthEndStr = monthEnd.toISOString().split('T')[0];
+      
+      try {
+        const response = await fetch(
+          `/api/bookings/availability?field_id=${field.id}&month_start=${monthStart}&month_end=${monthEndStr}`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          if (data.bookingInfo) {
+            setCalendarBookingInfo(data.bookingInfo);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch calendar booking info:', error);
+      }
+    };
+
+    fetchCalendarBookingInfo();
+  }, [field?.id]);
 
   const fetchWeekAvailability = async () => {
     if (!field?.id) return;
@@ -472,6 +503,23 @@ export default function FieldDetailPage() {
                           </div>
                         </div>
                         <p className="text-white/80 font-light leading-relaxed">{review.comment}</p>
+                        
+                        {/* Admin Reply */}
+                        {review.admin_reply && (
+                          <div className="mt-4 pt-4 border-t border-white/10 bg-blue-500/10 rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-blue-400 font-black text-xs">👑 ADMIN</span>
+                              <span className="text-white/50 text-xs">
+                                {review.admin?.name || 'Admin'} • {review.admin_replied_at && new Date(review.admin_replied_at).toLocaleDateString('fr-FR', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  year: 'numeric'
+                                })}
+                              </span>
+                            </div>
+                            <p className="text-white/90 font-light leading-relaxed text-sm md:text-base">{review.admin_reply}</p>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -511,6 +559,7 @@ export default function FieldDetailPage() {
                           minDate={getMinDate()}
                           maxDate={getMaxDate()}
                           isDateAvailable={isDateInOpenWeek}
+                          bookingInfo={calendarBookingInfo}
                         />
                     </div>
 

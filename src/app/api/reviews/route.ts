@@ -27,12 +27,13 @@ export async function GET(request: NextRequest) {
 
     const supabase = getAdminClient();
 
-    // Get reviews with user info (or anonymous reviewer info)
+    // Get reviews with user info and admin reply info
     const { data, error } = await supabase
       .from('reviews')
       .select(`
         *,
-        user:users(id, name, email)
+        user:users(id, name, email),
+        admin:users!reviews_admin_id_fkey(id, name, email)
       `)
       .eq('field_id', fieldId)
       .order('created_at', { ascending: false });

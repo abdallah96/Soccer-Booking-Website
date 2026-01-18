@@ -2,15 +2,22 @@
 
 import { useState } from 'react';
 
+interface DayBookingInfo {
+  total: number;       // Total number of slots
+  booked: number;      // Number of booked slots
+  isFullyBooked: boolean;
+}
+
 interface CalendarProps {
   selectedDate: string;
   onDateSelect: (date: string) => void;
   minDate?: string;
   maxDate?: string;
   isDateAvailable?: (date: Date) => boolean;
+  bookingInfo?: Record<string, DayBookingInfo>; // Key is date string YYYY-MM-DD
 }
 
-export function Calendar({ selectedDate, onDateSelect, minDate, maxDate, isDateAvailable }: CalendarProps) {
+export function Calendar({ selectedDate, onDateSelect, minDate, maxDate, isDateAvailable, bookingInfo }: CalendarProps) {
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(
     selectedDate ? new Date(selectedDate) : today
@@ -121,18 +128,26 @@ export function Calendar({ selectedDate, onDateSelect, minDate, maxDate, isDateA
             return <div key={`empty-${index}`} className="aspect-square" />;
           }
 
+          const dateStr = date.toISOString().split('T')[0];
           const disabled = isDateDisabled(date);
           const selected = isDateSelected(date);
           const todayDate = isToday(date);
+          
+          // Get booking info for this date
+          const dayInfo = bookingInfo?.[dateStr];
+          const isFullyBooked = dayInfo?.isFullyBooked || false;
+          const hasBookings = dayInfo && dayInfo.booked > 0;
+          const bookingPercentage = dayInfo ? Math.round((dayInfo.booked / dayInfo.total) * 100) : 0;
 
           return (
             <button
               key={date.toISOString()}
               onClick={() => handleDateClick(date)}
-              disabled={disabled}
+              disabled={disabled || isFullyBooked}
+              title={isFullyBooked ? 'Complet' : hasBookings ? `${bookingPercentage}% réservé` : undefined}
               className={`
-                aspect-square text-sm font-light transition-all
-                ${disabled 
+                aspect-square text-sm font-light transition-all relative
+                ${disabled || isFullyBooked
                   ? 'text-white/20 cursor-not-allowed' 
                   : selected
                   ? 'bg-red-500 text-white font-black border-2 border-red-400'
@@ -140,13 +155,36 @@ export function Calendar({ selectedDate, onDateSelect, minDate, maxDate, isDateA
                   ? 'bg-white/10 text-white border-2 border-white/30 hover:bg-white/20'
                   : 'text-white/60 hover:bg-white/10 hover:text-white border-2 border-transparent'
                 }
+                ${isFullyBooked ? 'bg-gray-800/50' : ''}
+                ${hasBookings && !isFullyBooked && !selected ? 'border-yellow-500/50' : ''}
               `}
             >
               {date.getDate()}
+              {/* Visual indicators */}
+              {isFullyBooked && !disabled && (
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full text-[8px] flex items-center justify-center">✕</span>
+              )}
+              {hasBookings && !isFullyBooked && !selected && (
+                <span className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 bg-yellow-400 rounded-full"></span>
+              )}
             </button>
           );
         })}
       </div>
+      
+      {/* Legend */}
+      {bookingInfo && Object.keys(bookingInfo).length > 0 && (
+        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/10 text-xs text-white/50">
+          <div className="flex items-center gap-1">
+            <span className="w-2 h-2 bg-yellow-400 rounded-full"></span>
+            <span>Partiellement réservé</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="w-3 h-3 bg-red-500 rounded-full text-[6px] flex items-center justify-center text-white">✕</span>
+            <span>Complet</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

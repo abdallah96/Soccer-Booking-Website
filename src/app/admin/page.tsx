@@ -7,7 +7,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Field } from '@/types';
 import toast from 'react-hot-toast';
 
-type ActiveSection = 'dashboard' | 'bookings' | 'availability' | 'fields' | 'settings';
+type ActiveSection = 'dashboard' | 'bookings' | 'availability' | 'fields' | 'users' | 'reviews' | 'settings';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -41,14 +41,29 @@ export default function AdminPage() {
   const [deletingField, setDeletingField] = useState<string | null>(null);
   const [stats, setStats] = useState<any>(null);
   const [showStats, setShowStats] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [admins, setAdmins] = useState<any[]>([]);
+  const [adminsLoading, setAdminsLoading] = useState(false);
+  const [deletingAdmin, setDeletingAdmin] = useState<string | null>(null);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [deletingReview, setDeletingReview] = useState<string | null>(null);
+  const [replyingToReview, setReplyingToReview] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [editingReply, setEditingReply] = useState<string | null>(null);
+  const [showContactUserForm, setShowContactUserForm] = useState(false);
+  const [contactUserData, setContactUserData] = useState({ name: '', email: '', phone: '', password: '' });
   
   // Availability blocking state
   const [blockedSlots, setBlockedSlots] = useState<any[]>([]);
   const [blockDate, setBlockDate] = useState('');
+  const [blockEndDate, setBlockEndDate] = useState(''); // For date range blocking
   const [blockStartTime, setBlockStartTime] = useState('');
   const [blockEndTime, setBlockEndTime] = useState('');
   const [blockReason, setBlockReason] = useState('');
   const [blockFullDay, setBlockFullDay] = useState(false);
+  const [blockDateRange, setBlockDateRange] = useState(false); // Toggle for date range
   const [savingBlock, setSavingBlock] = useState(false);
   
   // Week availability state
@@ -85,6 +100,9 @@ export default function AdminPage() {
     fetchFields();
     fetchStats();
     fetchBlockedSlots();
+    fetchUsers();
+    fetchAdmins();
+    fetchReviews();
   }, [user, router]);
 
   useEffect(() => {
@@ -142,6 +160,199 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error('Failed to fetch stats:', error);
+    }
+  };
+
+  const fetchUsers = async () => {
+    setUsersLoading(true);
+    try {
+      const response = await fetch('/api/admin/users', {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data.users || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  const fetchAdmins = async () => {
+    if (user?.role !== 'super_admin') return;
+    
+    setAdminsLoading(true);
+    try {
+      const response = await fetch('/api/admin/users?role=admin', {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAdmins(data.users || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch admins:', error);
+    } finally {
+      setAdminsLoading(false);
+    }
+  };
+
+  const fetchReviews = async () => {
+    setReviewsLoading(true);
+    try {
+      const response = await fetch('/api/admin/reviews', {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setReviews(data.reviews || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch reviews:', error);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce commentaire ?')) {
+      return;
+    }
+
+    setDeletingReview(reviewId);
+    try {
+      const response = await fetch(`/api/reviews/${reviewId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        toast.success('Commentaire supprimé');
+        fetchReviews();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Erreur lors de la suppression');
+      }
+    } catch (error) {
+      toast.error('Erreur lors de la suppression');
+    } finally {
+      setDeletingReview(null);
+    }
+  };
+
+  const handleSubmitReply = async (reviewId: string, isEdit: boolean = false) => {
+    if (!replyText.trim() || replyText.trim().length < 5) {
+      toast.error('La réponse doit contenir au moins 5 caractères');
+      return;
+    }
+
+    try {
+      const method = isEdit ? 'PUT' : 'POST';
+      const response = await fetch(`/api/admin/reviews/${reviewId}/reply`, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ reply: replyText }),
+      });
+
+      if (response.ok) {
+        toast.success(isEdit ? 'Réponse mise à jour' : 'Réponse ajoutée');
+        setReplyingToReview(null);
+        setEditingReply(null);
+        setReplyText('');
+        fetchReviews();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Erreur');
+      }
+    } catch (error) {
+      toast.error('Erreur');
+    }
+  };
+
+  const handleDeleteReply = async (reviewId: string) => {
+    if (!confirm('Supprimer cette réponse ?')) return;
+
+    try {
+      const response = await fetch(`/api/admin/reviews/${reviewId}/reply`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        toast.success('Réponse supprimée');
+        fetchReviews();
+      } else {
+        toast.error('Erreur');
+      }
+    } catch (error) {
+      toast.error('Erreur');
+    }
+  };
+
+  const handleCreateContactUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!contactUserData.name || !contactUserData.phone || !contactUserData.password) {
+      toast.error('Nom, téléphone et mot de passe sont requis');
+      return;
+    }
+
+    try {
+      // Create contact user with role 'user' but mark them specially if needed
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          email: contactUserData.email || `${contactUserData.phone.replace(/\D/g, '')}@petitcamp.sn`,
+          name: contactUserData.name,
+          phone: contactUserData.phone,
+          password: contactUserData.password,
+          role: 'user', // Contact users are regular users but can be marked in admin
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Contact utilisateur créé');
+        setContactUserData({ name: '', email: '', phone: '', password: '' });
+        setShowContactUserForm(false);
+        fetchUsers();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Erreur lors de la création');
+      }
+    } catch (error) {
+      toast.error('Erreur lors de la création');
+    }
+  };
+
+  const handleDeleteAdmin = async (adminId: string, adminName: string) => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer l'admin "${adminName}" ? Cette action est irréversible.`)) {
+      return;
+    }
+
+    setDeletingAdmin(adminId);
+    try {
+      const response = await fetch(`/api/admin/users?id=${adminId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        toast.success('Admin supprimé avec succès');
+        fetchAdmins();
+        fetchUsers();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || 'Erreur lors de la suppression');
+      }
+    } catch (error) {
+      toast.error('Erreur lors de la suppression');
+    } finally {
+      setDeletingAdmin(null);
     }
   };
 
@@ -272,6 +483,13 @@ export default function AdminPage() {
 
   const handleCreateAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Only super_admin can create admins
+    if (user?.role !== 'super_admin') {
+      toast.error('Seul le Super Admin peut créer des admins');
+      return;
+    }
+
     if (!adminData.email || !adminData.name || !adminData.password) {
       toast.error('Tous les champs sont requis');
       return;
@@ -294,8 +512,11 @@ export default function AdminPage() {
         toast.success('Admin créé avec succès');
         setAdminData({ email: '', name: '', password: '' });
         setShowCreateAdminForm(false);
+        fetchAdmins();
+        fetchUsers();
       } else {
-        toast.error('Erreur lors de la création');
+        const data = await response.json();
+        toast.error(data.error || 'Erreur lors de la création');
       }
     } catch (error) {
       toast.error('Erreur lors de la création');
@@ -506,43 +727,85 @@ export default function AdminPage() {
   const handleBlockSlot = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!blockDate) {
-      toast.error('Veuillez sélectionner une date');
+      toast.error('Veuillez sélectionner une date de début');
       return;
     }
 
-    if (!blockFullDay && (!blockStartTime || !blockEndTime)) {
+    if (blockDateRange && !blockEndDate) {
+      toast.error('Veuillez sélectionner une date de fin');
+      return;
+    }
+
+    if (blockDateRange && blockEndDate < blockDate) {
+      toast.error('La date de fin doit être après la date de début');
+      return;
+    }
+
+    if (!blockFullDay && !blockDateRange && (!blockStartTime || !blockEndTime)) {
       toast.error('Veuillez sélectionner les heures');
       return;
     }
 
     setSavingBlock(true);
     try {
-      const response = await fetch('/api/admin/blocked-slots', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          date: blockDate,
-          start_time: blockFullDay ? '08:00' : blockStartTime,
-          end_time: blockFullDay ? '02:00' : blockEndTime,
-          full_day: blockFullDay,
-          reason: blockReason,
-          field_id: fields[0]?.id,
-        }),
-      });
-
-      if (response.ok) {
-        toast.success('Créneau bloqué');
-        setBlockDate('');
-        setBlockStartTime('');
-        setBlockEndTime('');
-        setBlockReason('');
-        setBlockFullDay(false);
-        setShowBlockForm(false);
-        fetchBlockedSlots();
+      // If date range, create blocks for each day in the range
+      if (blockDateRange) {
+        const startDate = new Date(blockDate);
+        const endDate = new Date(blockEndDate);
+        const promises = [];
+        
+        for (let d = startDate; d <= endDate; d.setDate(d.getDate() + 1)) {
+          const dateStr = d.toISOString().split('T')[0];
+          promises.push(
+            fetch('/api/admin/blocked-slots', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                date: dateStr,
+                start_time: '08:00',
+                end_time: '02:00',
+                full_day: true,
+                reason: blockReason || `Fermé du ${blockDate} au ${blockEndDate}`,
+                field_id: fields[0]?.id,
+              }),
+            })
+          );
+        }
+        
+        await Promise.all(promises);
+        toast.success(`${promises.length} jours bloqués`);
       } else {
-        toast.error('Erreur lors du blocage');
+        // Single day block
+        const response = await fetch('/api/admin/blocked-slots', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            date: blockDate,
+            start_time: blockFullDay ? '08:00' : blockStartTime,
+            end_time: blockFullDay ? '02:00' : blockEndTime,
+            full_day: blockFullDay,
+            reason: blockReason,
+            field_id: fields[0]?.id,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Erreur lors du blocage');
+        }
+        toast.success('Créneau bloqué');
       }
+
+      setBlockDate('');
+      setBlockEndDate('');
+      setBlockStartTime('');
+      setBlockEndTime('');
+      setBlockReason('');
+      setBlockFullDay(false);
+      setBlockDateRange(false);
+      setShowBlockForm(false);
+      fetchBlockedSlots();
     } catch (error) {
       toast.error('Erreur lors du blocage');
     } finally {
@@ -571,8 +834,8 @@ export default function AdminPage() {
   const handleCreateManualBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!manualBooking.user_name || !manualBooking.user_email || !manualBooking.date || !manualBooking.start_time) {
-      toast.error('Veuillez remplir tous les champs obligatoires');
+    if (!manualBooking.user_name || !manualBooking.user_phone || !manualBooking.date || !manualBooking.start_time) {
+      toast.error('Veuillez remplir tous les champs obligatoires (nom, téléphone, date, heure)');
       return;
     }
 
@@ -584,7 +847,9 @@ export default function AdminPage() {
     setCreatingBooking(true);
     try {
       let userId;
-      const findUserResponse = await fetch(`/api/users?email=${encodeURIComponent(manualBooking.user_email)}`, {
+      
+      // Try to find user by phone first
+      const findUserResponse = await fetch(`/api/users?phone=${encodeURIComponent(manualBooking.user_phone)}`, {
         credentials: 'include',
       });
       
@@ -593,15 +858,20 @@ export default function AdminPage() {
         userId = userData.user?.id;
       }
 
+      // If no user found by phone, create a new one
       if (!userId) {
         const tempPassword = Math.random().toString(36).slice(-12) + 'A1!';
+        // Generate email from phone if not provided
+        const userEmail = manualBooking.user_email || `${manualBooking.user_phone.replace(/\D/g, '')}@petitcamp.sn`;
+        
         const userResponse = await fetch('/api/admin/users', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({
-            email: manualBooking.user_email,
+            email: userEmail,
             name: manualBooking.user_name,
+            phone: manualBooking.user_phone,
             password: tempPassword,
             role: 'user',
           }),
@@ -660,7 +930,8 @@ export default function AdminPage() {
     return d.toISOString().split('T')[0];
   };
 
-  const pendingCount = bookings.filter(b => b.status === 'pending').length;
+  const pendingCount = bookings.filter(b => b.status === 'pending' || b.status === 'pending_payment').length;
+  const pendingPaymentCount = bookings.filter(b => b.status === 'pending_payment').length;
 
   if (isLoading) {
     return <LoadingSpinner message="Chargement..." />;
@@ -673,8 +944,17 @@ export default function AdminPage() {
         <div className="px-4 lg:px-8 py-4 max-w-7xl mx-auto">
           <div className="flex items-center justify-between">
             <div>
+  <div>
               <h1 className="text-xl lg:text-3xl font-black text-white">PANEL ADMIN</h1>
-              <p className="text-xs lg:text-sm text-white/50">Bienvenue, {user?.name}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs lg:text-sm text-white/50">Bienvenue, {user?.name}</p>
+                {user?.role === 'super_admin' && (
+                  <span className="px-2 py-0.5 bg-red-600 text-white text-xs font-black rounded">
+                    SUPER ADMIN
+                  </span>
+                )}
+              </div>
+            </div>
         </div>
 
             {/* Quick stats */}
@@ -706,6 +986,8 @@ export default function AdminPage() {
               { id: 'bookings', label: '📅', fullLabel: 'Réservations', badge: pendingCount },
               { id: 'availability', label: '📆', fullLabel: 'Disponibilités' },
               { id: 'fields', label: '⚽', fullLabel: 'Terrain' },
+              { id: 'users', label: '👥', fullLabel: 'Utilisateurs' },
+              { id: 'reviews', label: '💬', fullLabel: 'Commentaires' },
               { id: 'settings', label: '⚙️', fullLabel: 'Paramètres' },
             ].map((item) => (
               <button
@@ -802,18 +1084,34 @@ export default function AdminPage() {
             {/* Recent Pending Bookings */}
             {pendingCount > 0 && (
               <div className="space-y-4">
-                <h3 className="text-xl lg:text-2xl text-white font-black">Réservations en attente</h3>
+                <h3 className="text-xl lg:text-2xl text-white font-black">
+                  Réservations en attente
+                  {pendingPaymentCount > 0 && (
+                    <span className="ml-2 text-sm text-orange-400 font-normal">
+                      ({pendingPaymentCount} en attente de paiement)
+                    </span>
+                  )}
+                </h3>
                 <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-4">
                   {bookings
-                    .filter(b => b.status === 'pending')
+                    .filter(b => b.status === 'pending' || b.status === 'pending_payment')
                     .slice(0, 6)
                     .map((booking) => (
                       <div
                         key={booking.id}
-                        className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 lg:p-6"
+                        className={`rounded-xl p-4 lg:p-6 ${
+                          booking.status === 'pending_payment' 
+                            ? 'bg-orange-500/10 border border-orange-500/20' 
+                            : 'bg-yellow-500/10 border border-yellow-500/20'
+                        }`}
                       >
                         <div className="flex justify-between items-start mb-3">
                           <div>
+                            {booking.status === 'pending_payment' && (
+                              <span className="inline-block px-2 py-0.5 text-xs font-black bg-orange-500/30 text-orange-300 rounded mb-2">
+                                💰 EN ATTENTE PAIEMENT
+                              </span>
+                            )}
                             <div className="text-white font-black text-lg">
                               {new Date(booking.date).toLocaleDateString('fr-FR', { 
                                 weekday: 'short', 
@@ -821,11 +1119,18 @@ export default function AdminPage() {
                                 month: 'short' 
                               })}
                             </div>
-                            <div className="text-yellow-300 text-sm lg:text-base">⏰ {booking.time_slot}</div>
-                            <div className="text-white/60 text-sm mt-1">{booking.user?.name || 'N/A'}</div>
+                            <div className={`text-sm lg:text-base ${booking.status === 'pending_payment' ? 'text-orange-300' : 'text-yellow-300'}`}>
+                              ⏰ {booking.time_slot}
+                            </div>
+                            <div className="text-white/60 text-sm mt-1">
+                              {booking.user?.name || 'N/A'}
+                              {booking.user?.phone && <span className="ml-2">📞 {booking.user.phone}</span>}
+                            </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-yellow-400 font-black">{booking.amount?.toLocaleString()} FCFA</div>
+                          <div className={`font-black ${booking.status === 'pending_payment' ? 'text-orange-400' : 'text-yellow-400'}`}>
+                            {booking.amount?.toLocaleString()} FCFA
+                          </div>
                         </div>
                       </div>
                         <div className="flex gap-2">
@@ -834,7 +1139,7 @@ export default function AdminPage() {
                             disabled={updatingBooking === booking.id}
                             className="flex-1 py-2 lg:py-3 bg-green-600 text-white text-sm lg:text-base font-black rounded-lg disabled:opacity-50 hover:bg-green-700 transition-colors"
                           >
-                            ✓ Confirmer
+                            ✓ {booking.status === 'pending_payment' ? 'Paiement reçu' : 'Confirmer'}
                           </button>
                           <button
                             onClick={() => handleConfirmBooking(booking.id, 'cancelled')}
@@ -885,6 +1190,8 @@ export default function AdminPage() {
                     className={`rounded-xl p-4 border ${
                       booking.status === 'pending'
                         ? 'bg-yellow-500/10 border-yellow-500/20'
+                        : booking.status === 'pending_payment'
+                        ? 'bg-orange-500/10 border-orange-500/20'
                         : booking.status === 'confirmed'
                         ? 'bg-green-500/10 border-green-500/20'
                         : 'bg-gray-500/10 border-gray-500/20'
@@ -902,31 +1209,74 @@ export default function AdminPage() {
                         <div className="text-white/80 text-sm">⏰ {booking.time_slot}</div>
                         <div className="text-white/50 text-xs mt-2">
                           👤 {booking.user?.name || 'N/A'} · {booking.user?.email || ''}
+                          {booking.user?.phone && <span className="ml-2">📞 {booking.user.phone}</span>}
             </div>
               </div>
                       <div className="text-right">
                         <span className={`px-2 py-1 text-xs font-black rounded ${
                           booking.status === 'pending'
                             ? 'bg-yellow-500/20 text-yellow-300'
+                            : booking.status === 'pending_payment'
+                            ? 'bg-orange-500/20 text-orange-300'
                             : booking.status === 'confirmed'
                             ? 'bg-green-500/20 text-green-300'
                             : 'bg-gray-500/20 text-gray-300'
                         }`}>
                           {booking.status === 'pending' ? 'EN ATTENTE' : 
+                           booking.status === 'pending_payment' ? 'EN ATTENTE PAIEMENT' :
                            booking.status === 'confirmed' ? 'CONFIRMÉ' : 'ANNULÉ'}
                         </span>
                         <div className="text-white font-black mt-2">{booking.amount?.toLocaleString()} FCFA</div>
             </div>
                     </div>
                     
-                    {booking.status === 'pending' && (
+                    {/* Payment Info */}
+                    <div className="bg-white/5 rounded-lg p-3 mb-3 text-xs">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-0.5 rounded font-black ${
+                            booking.payment_method === 'wave' ? 'bg-blue-500/20 text-blue-300' :
+                            booking.payment_method === 'orange_money' ? 'bg-orange-500/20 text-orange-300' :
+                            'bg-green-500/20 text-green-300'
+                          }`}>
+                            {booking.payment_method === 'wave' ? '💙 Wave' :
+                             booking.payment_method === 'orange_money' ? '🟠 Orange Money' :
+                             '💵 Espèces'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-0.5 rounded font-black ${
+                            booking.payment_status === 'paid' ? 'bg-green-500/20 text-green-300' :
+                            booking.payment_status === 'partial' ? 'bg-yellow-500/20 text-yellow-300' :
+                            'bg-red-500/20 text-red-300'
+                          }`}>
+                            {booking.payment_status === 'paid' ? '✓ Payé' :
+                             booking.payment_status === 'partial' ? '◐ Partiel' :
+                             '✕ Non payé'}
+                          </span>
+                        </div>
+                      </div>
+                      {booking.payment_date && (
+                        <div className="text-white/40 mt-2">
+                          Payé le {new Date(booking.payment_date).toLocaleDateString('fr-FR', {
+                            day: 'numeric',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {(booking.status === 'pending' || booking.status === 'pending_payment') && (
                       <div className="flex gap-2 mt-3 pt-3 border-t border-white/10">
                         <button
                           onClick={() => handleConfirmBooking(booking.id, 'confirmed')}
                           disabled={updatingBooking === booking.id}
                           className="flex-1 py-2 bg-green-600 text-white text-sm font-black rounded-lg disabled:opacity-50"
                         >
-                          ✓ Confirmer
+                          ✓ {booking.status === 'pending_payment' ? 'Paiement reçu' : 'Confirmer'}
                         </button>
                         <button
                           onClick={() => handleConfirmBooking(booking.id, 'cancelled')}
@@ -1058,29 +1408,89 @@ export default function AdminPage() {
 
               {showBlockForm && (
                 <form onSubmit={handleBlockSlot} className="bg-white/5 border border-white/10 rounded-xl p-4 mb-4 space-y-4">
-                  <div>
-                    <label className="text-white/60 text-sm">Date</label>
-                    <input
-                      type="date"
-                      value={blockDate}
-                      onChange={(e) => setBlockDate(e.target.value)}
-                      min={getMinDate()}
-                      max={getMaxDate()}
-                      className="w-full mt-1 px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
-                    />
+                  {/* Toggle between single day and date range */}
+                  <div className="flex gap-2 mb-4">
+                    <button
+                      type="button"
+                      onClick={() => setBlockDateRange(false)}
+                      className={`flex-1 py-2 px-4 rounded-lg text-sm font-black transition-colors ${
+                        !blockDateRange 
+                          ? 'bg-red-500 text-white' 
+                          : 'bg-white/10 text-white/60'
+                      }`}
+                    >
+                      📅 Un jour
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBlockDateRange(true);
+                        setBlockFullDay(true);
+                      }}
+                      className={`flex-1 py-2 px-4 rounded-lg text-sm font-black transition-colors ${
+                        blockDateRange 
+                          ? 'bg-red-500 text-white' 
+                          : 'bg-white/10 text-white/60'
+                      }`}
+                    >
+                      📆 Période (Du ... au ...)
+                    </button>
                   </div>
-                  
-                  <label className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={blockFullDay}
-                      onChange={(e) => setBlockFullDay(e.target.checked)}
-                      className="w-5 h-5"
-                    />
-                    <span className="text-white">Toute la journée</span>
-                  </label>
 
-                  {!blockFullDay && (
+                  {blockDateRange ? (
+                    /* Date range inputs */
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-white/60 text-sm">Du</label>
+                        <input
+                          type="date"
+                          value={blockDate}
+                          onChange={(e) => setBlockDate(e.target.value)}
+                          min={getMinDate()}
+                          max={getMaxDate()}
+                          className="w-full mt-1 px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-white/60 text-sm">Au</label>
+                        <input
+                          type="date"
+                          value={blockEndDate}
+                          onChange={(e) => setBlockEndDate(e.target.value)}
+                          min={blockDate || getMinDate()}
+                          max={getMaxDate()}
+                          className="w-full mt-1 px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    /* Single day input */
+                    <div>
+                      <label className="text-white/60 text-sm">Date</label>
+                      <input
+                        type="date"
+                        value={blockDate}
+                        onChange={(e) => setBlockDate(e.target.value)}
+                        min={getMinDate()}
+                        max={getMaxDate()}
+                        className="w-full mt-1 px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
+                      />
+                    </div>
+                  )}
+                  
+                  {!blockDateRange && (
+                    <label className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={blockFullDay}
+                        onChange={(e) => setBlockFullDay(e.target.checked)}
+                        className="w-5 h-5"
+                      />
+                      <span className="text-white">Toute la journée</span>
+                    </label>
+                  )}
+
+                  {!blockFullDay && !blockDateRange && (
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="text-white/60 text-sm">Début</label>
@@ -1107,9 +1517,9 @@ export default function AdminPage() {
                             <option key={t} value={t}>{t}</option>
                           ))}
                         </select>
-            </div>
-          </div>
-        )}
+                      </div>
+                    </div>
+                  )}
 
                   <input
                     type="text"
@@ -1120,21 +1530,24 @@ export default function AdminPage() {
                   />
 
                   <div className="flex gap-2">
-          <button
+                    <button
                       type="submit"
                       disabled={savingBlock}
                       className="flex-1 py-3 bg-red-600 text-white font-black rounded-lg disabled:opacity-50"
-          >
-                      {savingBlock ? '...' : 'Bloquer'}
-          </button>
-          <button
+                    >
+                      {savingBlock ? '...' : blockDateRange ? 'Bloquer la période' : 'Bloquer'}
+                    </button>
+                    <button
                       type="button"
-                      onClick={() => setShowBlockForm(false)}
+                      onClick={() => {
+                        setShowBlockForm(false);
+                        setBlockDateRange(false);
+                      }}
                       className="px-6 py-3 bg-white/10 text-white rounded-lg"
-          >
+                    >
                       Annuler
-          </button>
-        </div>
+                    </button>
+                  </div>
                 </form>
               )}
 
@@ -1233,6 +1646,280 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* USERS */}
+        {activeSection === 'users' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl lg:text-3xl font-black text-white">Utilisateurs</h2>
+                <p className="text-white/50 text-sm lg:text-base mt-1">
+                  {users.length} utilisateurs inscrits
+                </p>
+              </div>
+            </div>
+
+            {usersLoading ? (
+              <div className="text-center py-12 text-white/40">
+                Chargement...
+              </div>
+            ) : users.length === 0 ? (
+              <div className="text-center py-12 text-white/40">
+                Aucun utilisateur
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {/* Desktop Table */}
+                <div className="hidden lg:block overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="text-left text-white/60 text-sm border-b border-white/10">
+                        <th className="pb-3 font-medium">Nom</th>
+                        <th className="pb-3 font-medium">Contact</th>
+                        <th className="pb-3 font-medium">Rôle</th>
+                        <th className="pb-3 font-medium text-center">Réservations</th>
+                        <th className="pb-3 font-medium">Inscrit le</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.map((u) => (
+                        <tr key={u.id} className="border-b border-white/5 hover:bg-white/5">
+                          <td className="py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-black">
+                                {u.name?.charAt(0)?.toUpperCase() || '?'}
+                              </div>
+                              <div>
+                                <div className="text-white font-medium">{u.name}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-4">
+                            <div className="text-white/80 text-sm">{u.email}</div>
+                            {u.phone && (
+                              <div className="text-white/50 text-xs">📞 {u.phone}</div>
+                            )}
+                          </td>
+                          <td className="py-4">
+                            <span className={`px-2 py-1 text-xs font-black rounded ${
+                              u.role === 'admin' 
+                                ? 'bg-red-500/20 text-red-300' 
+                                : 'bg-white/10 text-white/60'
+                            }`}>
+                              {u.role === 'admin' ? 'ADMIN' : 'CLIENT'}
+                            </span>
+                          </td>
+                          <td className="py-4 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <span className="text-white font-black">{u.booking_stats?.total || 0}</span>
+                              {u.booking_stats?.confirmed > 0 && (
+                                <span className="text-green-400 text-xs">✓{u.booking_stats.confirmed}</span>
+                              )}
+                              {u.booking_stats?.cancelled > 0 && (
+                                <span className="text-red-400 text-xs">✕{u.booking_stats.cancelled}</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-4 text-white/50 text-sm">
+                            {new Date(u.created_at).toLocaleDateString('fr-FR', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric'
+                            })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Cards */}
+                <div className="lg:hidden space-y-3">
+                  {users.map((u) => (
+                    <div
+                      key={u.id}
+                      className="bg-white/5 border border-white/10 rounded-xl p-4"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-black">
+                            {u.name?.charAt(0)?.toUpperCase() || '?'}
+                          </div>
+                          <div>
+                            <div className="text-white font-black">{u.name}</div>
+                            <span className={`px-2 py-0.5 text-xs font-black rounded ${
+                              u.role === 'admin' 
+                                ? 'bg-red-500/20 text-red-300' 
+                                : 'bg-white/10 text-white/60'
+                            }`}>
+                              {u.role === 'admin' ? 'ADMIN' : 'CLIENT'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-white font-black text-lg">{u.booking_stats?.total || 0}</div>
+                          <div className="text-white/50 text-xs">réservations</div>
+                        </div>
+                      </div>
+                      <div className="text-white/60 text-sm space-y-1">
+                        <div>📧 {u.email}</div>
+                        {u.phone && <div>📞 {u.phone}</div>}
+                        <div className="text-white/40 text-xs mt-2">
+                          Inscrit le {new Date(u.created_at).toLocaleDateString('fr-FR')}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* REVIEWS */}
+        {activeSection === 'reviews' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl lg:text-3xl font-black text-white">Commentaires</h2>
+                <p className="text-white/50 text-sm lg:text-base mt-1">
+                  {reviews.length} commentaires au total
+                </p>
+              </div>
+            </div>
+
+            {reviewsLoading ? (
+              <div className="text-center py-12 text-white/40">Chargement...</div>
+            ) : reviews.length === 0 ? (
+              <div className="text-center py-12 text-white/40">
+                Aucun commentaire
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {reviews.map((review) => (
+                  <div
+                    key={review.id}
+                    className="bg-white/5 border border-white/10 rounded-xl p-4 lg:p-6"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-10 h-10 bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-black">
+                            {review.user?.name?.charAt(0)?.toUpperCase() || '?'}
+                          </div>
+                          <div>
+                            <div className="text-white font-black">{review.user?.name || review.reviewer_name || 'Anonyme'}</div>
+                            <div className="text-white/50 text-xs">
+                              {review.field?.name} • {new Date(review.created_at).toLocaleDateString('fr-FR', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric'
+                              })}
+                            </div>
+                          </div>
+                          <div className="flex gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <span
+                                key={star}
+                                className={`text-lg ${review.rating >= star ? 'text-yellow-400' : 'text-gray-600'}`}
+                              >
+                                ★
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        <p className="text-white/80 text-sm lg:text-base mb-3">{review.comment}</p>
+                        
+                        {/* Admin Reply */}
+                        {review.admin_reply && (
+                          <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 mt-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-blue-400 font-black text-xs">👑 ADMIN</span>
+                              <span className="text-white/50 text-xs">
+                                {review.admin?.name} • {review.admin_replied_at && new Date(review.admin_replied_at).toLocaleDateString('fr-FR')}
+                              </span>
+                            </div>
+                            <p className="text-white/90 text-sm">{review.admin_reply}</p>
+                            <div className="flex gap-2 mt-2">
+                              <button
+                                onClick={() => {
+                                  setEditingReply(review.id);
+                                  setReplyText(review.admin_reply);
+                                  setReplyingToReview(null);
+                                }}
+                                className="text-xs text-blue-400 hover:text-blue-300 underline"
+                              >
+                                Modifier
+                              </button>
+                              <button
+                                onClick={() => handleDeleteReply(review.id)}
+                                className="text-xs text-red-400 hover:text-red-300 underline"
+                              >
+                                Supprimer
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Reply Form */}
+                        {(replyingToReview === review.id || editingReply === review.id) && (
+                          <div className="mt-3 space-y-2">
+                            <textarea
+                              value={replyText}
+                              onChange={(e) => setReplyText(e.target.value)}
+                              placeholder="Votre réponse..."
+                              rows={3}
+                              className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white text-sm"
+                            />
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleSubmitReply(review.id, editingReply === review.id)}
+                                className="px-4 py-2 bg-blue-600 text-white text-sm font-black rounded-lg hover:bg-blue-700 transition-colors"
+                              >
+                                {editingReply === review.id ? 'Mettre à jour' : 'Répondre'}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setReplyingToReview(null);
+                                  setEditingReply(null);
+                                  setReplyText('');
+                                }}
+                                className="px-4 py-2 bg-white/10 text-white text-sm rounded-lg"
+                              >
+                                Annuler
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        {!review.admin_reply && replyingToReview !== review.id && (
+                          <button
+                            onClick={() => {
+                              setReplyingToReview(review.id);
+                              setReplyText('');
+                              setEditingReply(null);
+                            }}
+                            className="px-3 py-2 bg-blue-500/20 text-blue-300 text-xs font-black rounded-lg border border-blue-500/30 hover:bg-blue-500/30 transition-colors"
+                          >
+                            Répondre
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDeleteReview(review.id)}
+                          disabled={deletingReview === review.id}
+                          className="px-3 py-2 bg-red-500/20 text-red-400 text-xs font-black rounded-lg border border-red-500/30 hover:bg-red-500/30 transition-colors disabled:opacity-50"
+                        >
+                          {deletingReview === review.id ? '...' : 'Supprimer'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* SETTINGS */}
         {activeSection === 'settings' && (
           <div className="space-y-4">
@@ -1278,18 +1965,127 @@ export default function AdminPage() {
             </form>
             )}
 
-            <button
-              onClick={() => setShowCreateAdminForm(!showCreateAdminForm)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-left"
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">👤</span>
-                <div>
-                  <div className="text-white font-black">Créer un admin</div>
-                  <div className="text-white/50 text-sm">Ajouter un nouvel administrateur</div>
+{/* Admin Management - Only for Super Admin */}
+            {/* Contact User Management */}
+            <div className="border-t border-white/10 pt-4 mt-4">
+              <button
+                onClick={() => setShowContactUserForm(!showContactUserForm)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-left hover:bg-white/10 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">📞</span>
+                  <div>
+                    <div className="text-white font-black">Ajouter un contact utilisateur</div>
+                    <div className="text-white/50 text-sm">Ajouter un utilisateur de contact</div>
+                  </div>
                 </div>
-              </div>
-            </button>
+              </button>
+
+              {showContactUserForm && (
+                <form onSubmit={handleCreateContactUser} className="bg-white/5 border border-white/10 rounded-xl p-4 mt-4 space-y-3">
+                  <input
+                    type="text"
+                    value={contactUserData.name}
+                    onChange={(e) => setContactUserData({ ...contactUserData, name: e.target.value })}
+                    placeholder="Nom complet *"
+                    required
+                    className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
+                  />
+                  <input
+                    type="tel"
+                    value={contactUserData.phone}
+                    onChange={(e) => setContactUserData({ ...contactUserData, phone: e.target.value })}
+                    placeholder="Téléphone *"
+                    required
+                    className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
+                  />
+                  <input
+                    type="email"
+                    value={contactUserData.email}
+                    onChange={(e) => setContactUserData({ ...contactUserData, email: e.target.value })}
+                    placeholder="Email (optionnel)"
+                    className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
+                  />
+                  <input
+                    type="password"
+                    value={contactUserData.password}
+                    onChange={(e) => setContactUserData({ ...contactUserData, password: e.target.value })}
+                    placeholder="Mot de passe *"
+                    required
+                    minLength={6}
+                    className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      type="submit"
+                      className="flex-1 py-3 bg-red-600 text-white font-black rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      Créer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowContactUserForm(false);
+                        setContactUserData({ name: '', email: '', phone: '', password: '' });
+                      }}
+                      className="px-6 py-3 bg-white/10 text-white rounded-lg"
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+
+            {user?.role === 'super_admin' && (
+              <>
+                <div className="border-t border-white/10 pt-4 mt-4">
+                  <h3 className="text-lg font-black text-white mb-4">👑 Gestion des Admins</h3>
+                  
+                  {/* Admins List */}
+                  {adminsLoading ? (
+                    <div className="text-center py-8 text-white/40">Chargement...</div>
+                  ) : admins.length === 0 ? (
+                    <div className="text-center py-8 text-white/40">Aucun admin</div>
+                  ) : (
+                    <div className="space-y-2 mb-4">
+                      {admins.map((admin) => (
+                        <div
+                          key={admin.id}
+                          className="flex items-center justify-between bg-white/5 border border-white/10 rounded-lg p-3"
+                        >
+                          <div>
+                            <div className="text-white font-medium">{admin.name}</div>
+                            <div className="text-white/50 text-xs">{admin.email}</div>
+                          </div>
+                          <button
+                            onClick={() => handleDeleteAdmin(admin.id, admin.name)}
+                            disabled={deletingAdmin === admin.id}
+                            className="px-3 py-1 bg-red-500/20 text-red-400 text-xs font-black rounded border border-red-500/30 hover:bg-red-500/30 transition-colors disabled:opacity-50"
+                          >
+                            {deletingAdmin === admin.id ? '...' : 'Supprimer'}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Create Admin Button */}
+                  <button
+                    onClick={() => setShowCreateAdminForm(!showCreateAdminForm)}
+                    className="w-full bg-red-500/20 border border-red-500/30 rounded-xl p-4 text-left hover:bg-red-500/30 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">➕</span>
+                      <div>
+                        <div className="text-white font-black">Créer un admin</div>
+                        <div className="text-white/50 text-sm">Ajouter un nouvel administrateur</div>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </>
+            )}
 
         {showCreateAdminForm && (
               <form onSubmit={handleCreateAdmin} className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
@@ -1362,22 +2158,24 @@ export default function AdminPage() {
               </div>
               
               <div>
-                <label className="text-white/60 text-sm">Email *</label>
+                <label className="text-white/60 text-sm">Téléphone *</label>
                 <input
-                  type="email"
-                  value={manualBooking.user_email}
-                  onChange={(e) => setManualBooking({ ...manualBooking, user_email: e.target.value })}
+                  type="tel"
+                  value={manualBooking.user_phone}
+                  onChange={(e) => setManualBooking({ ...manualBooking, user_phone: e.target.value })}
                   required
+                  placeholder="Ex: 77 123 45 67"
                   className="w-full mt-1 px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
                 />
               </div>
               
               <div>
-                <label className="text-white/60 text-sm">Téléphone</label>
+                <label className="text-white/60 text-sm">Email (optionnel)</label>
                 <input
-                  type="tel"
-                  value={manualBooking.user_phone}
-                  onChange={(e) => setManualBooking({ ...manualBooking, user_phone: e.target.value })}
+                  type="email"
+                  value={manualBooking.user_email}
+                  onChange={(e) => setManualBooking({ ...manualBooking, user_email: e.target.value })}
+                  placeholder="exemple@email.com"
                   className="w-full mt-1 px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
                 />
               </div>

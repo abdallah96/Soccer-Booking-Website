@@ -94,7 +94,7 @@ async function handlePost(request: AuthenticatedRequest) {
       .eq('field_id', sanitizedFieldId)
       .eq('date', sanitizedDate)
       .eq('time_slot', time_slot)
-      .in('status', ['pending', 'confirmed'])
+      .in('status', ['pending', 'pending_payment', 'confirmed'])
       .single();
 
     if (existingBooking) {
@@ -104,7 +104,7 @@ async function handlePost(request: AuthenticatedRequest) {
       );
     }
 
-    // Create booking
+    // Create booking with "pending_payment" status (En attente de paiement)
     const { data: booking, error: bookingError } = await supabase
       .from('bookings')
       .insert({
@@ -114,9 +114,10 @@ async function handlePost(request: AuthenticatedRequest) {
         time_slot,
         start_time: sanitizedTime,
         duration: sanitizedDuration,
-        status: 'pending',
+        status: 'pending_payment',
         payment_method,
         amount,
+        payment_status: 'unpaid',
       })
       .select()
       .single();

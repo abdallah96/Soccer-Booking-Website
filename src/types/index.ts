@@ -3,7 +3,7 @@ export interface User {
   email: string;
   name: string;
   phone?: string;
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'super_admin';
   created_at: string;
 }
 
@@ -34,9 +34,11 @@ export interface Booking {
   field_id: string;
   date: string;
   time_slot: string;
-  status: 'pending' | 'confirmed' | 'cancelled';
+  status: 'pending' | 'pending_payment' | 'confirmed' | 'cancelled';
   payment_method: 'wave' | 'orange_money' | 'cash';
   amount: number;
+  payment_status?: 'unpaid' | 'partial' | 'paid';
+  payment_date?: string;
   created_at: string;
 }
 
@@ -60,9 +62,13 @@ export interface Review {
   user_id: string | null; // null for anonymous reviews
   rating: number;
   comment: string;
+  admin_reply?: string | null;
+  admin_id?: string | null;
+  admin_replied_at?: string | null;
   created_at: string;
   updated_at: string;
   user?: User | null;
+  admin?: User | null; // Admin who replied
   reviewer_name?: string; // For anonymous reviews
   reviewer_email?: string | null; // For anonymous reviews
 }

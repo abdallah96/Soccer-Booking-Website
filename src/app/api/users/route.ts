@@ -16,23 +16,50 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const email = searchParams.get('email');
+    const phone = searchParams.get('phone');
 
-    if (!email) {
+    if (!email && !phone) {
       return NextResponse.json(
-        { error: 'Email parameter is required' },
+        { error: 'Email or phone parameter is required' },
         { status: 400 }
       );
     }
 
     const supabase = getAdminClient();
 
-    const { data: userData, error } = await supabase
-      .from('users')
-      .select('id, email, name, phone')
-      .eq('email', email)
-      .single();
+    // Search by phone first (primary identifier), then by email
+    let userData = null;
+    
+    if (phone) {
+      // Clean phone number for lookup (remove spaces, dashes)
+      const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+      
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, email, name, phone')
+        .or(`phone.eq.${phone},phone.eq.${cleanPhone}`)
+        .limit(1)
+        .single();
+      
+      if (!error && data) {
+        userData = data;
+      }
+    }
+    
+    // Fallback to email search if no phone match
+    if (!userData && email) {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, email, name, phone')
+        .eq('email', email)
+        .single();
+      
+      if (!error && data) {
+        userData = data;
+      }
+    }
 
-    if (error || !userData) {
+    if (!userData) {
       return NextResponse.json(
         { user: null },
         { status: 200 }

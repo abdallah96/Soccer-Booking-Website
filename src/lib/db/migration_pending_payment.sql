@@ -1,41 +1,24 @@
--- Schema updates for Petit Camp
--- Run these migrations on your Supabase database
-
--- Add password_hash column to users table
-ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash VARCHAR(255);
-
--- Add start_time and duration to bookings table
-ALTER TABLE bookings ADD COLUMN IF NOT EXISTS start_time VARCHAR(10);
-ALTER TABLE bookings ADD COLUMN IF NOT EXISTS duration INTEGER;
-
--- Create Petit Camp field if it doesn't exist
-INSERT INTO fields (id, name, description, location, price_per_hour, capacity, rating, facilities)
-VALUES (
-  'petit-camp-1',
-  'Petit Camp',
-  'Terrain de football professionnel avec installations modernes. Éclairage de qualité, vestiaires équipés, parking sécurisé et rafraîchissements disponibles.',
-  'Thiés, Sénégal',
-  20000,
-  22,
-  4.8,
-  ARRAY['Éclairage', 'Vestiaires', 'Parking', 'Rafraîchissements']
-) ON CONFLICT (id) DO NOTHING;
-
--- If using name as unique identifier instead of id
--- INSERT INTO fields (name, description, location, price_per_hour, capacity, rating, facilities)
--- VALUES (
---   'Petit Camp',
---   'Terrain de football professionnel avec installations modernes. Éclairage de qualité, vestiaires équipés, parking sécurisé et rafraîchissements disponibles.',
---   'Thiés, Sénégal',
---   20000,
---   22,
---   4.8,
---   ARRAY['Éclairage', 'Vestiaires', 'Parking', 'Rafraîchissements']
--- ) ON CONFLICT DO NOTHING;
+-- ============================================
+-- Migration: Booking Payment Status & Pending Payment + Super Admin Role
+-- Date: 2026-01-18
+-- Description: 
+--   1. Adds pending_payment status and payment tracking fields to bookings
+--   2. Adds super_admin role for CEO/owner who manages all admins
+-- ============================================
 
 -- ============================================
--- Migration: Booking Payment Status & Pending Payment
--- Date: 2026-01-18
+-- PART 1: Super Admin Role Support
+-- ============================================
+
+-- 1. Drop the old CHECK constraint on users.role
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+
+-- 2. Add new CHECK constraint to include 'super_admin' role
+ALTER TABLE users ADD CONSTRAINT users_role_check 
+  CHECK (role IN ('user', 'admin', 'super_admin'));
+
+-- ============================================
+-- PART 2: Booking Payment Status & Pending Payment
 -- ============================================
 
 -- 1. Drop the old CHECK constraint on bookings.status
@@ -66,4 +49,3 @@ CREATE INDEX IF NOT EXISTS idx_bookings_payment_status ON bookings(payment_statu
 
 -- 8. Create index on payment_date for better query performance
 CREATE INDEX IF NOT EXISTS idx_bookings_payment_date ON bookings(payment_date);
-

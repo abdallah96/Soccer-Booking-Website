@@ -69,8 +69,8 @@ export async function requireAuth(
 }
 
 /**
- * Middleware wrapper for admin-only routes
- * Returns 403 if not admin
+ * Middleware wrapper for admin-only routes (admin or super_admin)
+ * Returns 403 if not admin or super_admin
  */
 export async function requireAdmin(
   request: NextRequest,
@@ -85,9 +85,39 @@ export async function requireAdmin(
     );
   }
 
-  if (user.role !== 'admin') {
+  if (user.role !== 'admin' && user.role !== 'super_admin') {
     return NextResponse.json(
       { error: 'Admin access required' },
+      { status: 403 }
+    );
+  }
+
+  // Attach user to request
+  (request as AuthenticatedRequest).user = user;
+
+  return handler(request as AuthenticatedRequest);
+}
+
+/**
+ * Middleware wrapper for super_admin-only routes
+ * Returns 403 if not super_admin
+ */
+export async function requireSuperAdmin(
+  request: NextRequest,
+  handler: (request: AuthenticatedRequest) => Promise<NextResponse>
+): Promise<NextResponse> {
+  const { user, error } = await verifyAuth(request);
+
+  if (!user) {
+    return NextResponse.json(
+      { error: error || 'Authentication required' },
+      { status: 401 }
+    );
+  }
+
+  if (user.role !== 'super_admin') {
+    return NextResponse.json(
+      { error: 'Super Admin access required' },
       { status: 403 }
     );
   }
