@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { cookies } from 'next/headers';
+import { verifyToken } from '@/lib/utils/jwt';
 
 export interface AuthUser {
   userId: string;
@@ -18,13 +19,13 @@ async function getAuthUser(request: NextRequest): Promise<AuthUser | null> {
   const token = cookieStore.get('auth-token')?.value ?? request.headers.get('authorization')?.replace('Bearer ', '');
   if (!token) return null;
   try {
+    const payload = await verifyToken(token);
+    if (!payload?.userId) return null;
     const supabase = getAdminClient();
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    if (error || !user) return null;
     const { data: profile } = await supabase
       .from('users')
       .select('id, email, name, role')
-      .eq('id', user.id)
+      .eq('id', payload.userId)
       .single();
     if (!profile) return null;
     return {

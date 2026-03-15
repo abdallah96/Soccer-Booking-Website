@@ -91,7 +91,11 @@ function BookingConfirmationContent() {
       const res = await fetch(`/api/bookings/${bookingId}`, { credentials: 'include' });
       if (res.ok) {
         const data = await res.json();
-        setBooking(data.booking);
+        const b = data.booking;
+        setBooking(b);
+        if (b?.status === 'pending_payment' && b?.payment_expires_at && new Date(b.payment_expires_at).getTime() < Date.now()) {
+          setExpired(true);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -108,7 +112,18 @@ function BookingConfirmationContent() {
     } catch (e) {}
   };
 
-  const handleExpired = useCallback(() => setExpired(true), []);
+  const handleExpired = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/bookings/${bookingId}`, { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setBooking(data.booking);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setExpired(true);
+  }, [bookingId]);
 
   if (isLoading) {
     return (
@@ -178,14 +193,20 @@ function BookingConfirmationContent() {
             <p className="text-white/60">Cette réservation a été annulée.</p>
           </div>
         )}
-        {expired && (
-          <div className="bg-red-500/20 border border-red-500/40 rounded-2xl p-6 text-center">
-            <div className="text-5xl mb-3">⛔</div>
-            <h1 className="text-2xl font-black text-red-400 mb-1">Délai expiré</h1>
-            <p className="text-white/60">Le délai de paiement de 30 minutes est dépassé. La réservation a été annulée automatiquement.</p>
-            <Link href="/fields" className="inline-block mt-4 px-8 py-3 bg-red-600 text-white font-black rounded-xl hover:bg-red-700 transition-colors">
-              Faire une nouvelle réservation
-            </Link>
+        {expired && booking?.status !== 'cancelled' && (
+          <div className="bg-amber-500/20 border border-amber-500/40 rounded-2xl p-6 text-center">
+            <div className="text-5xl mb-3">⏱</div>
+            <h1 className="text-2xl font-black text-amber-400 mb-1">Délai de paiement dépassé</h1>
+            <p className="text-white/60 mb-2">Le délai de paiement (30 min) est dépassé. Si vous avez déjà payé, l&apos;équipe peut encore confirmer votre réservation.</p>
+            <p className="text-white/50 text-sm mb-4">Sinon le créneau pourra être libéré. Contactez-nous en cas de doute.</p>
+            <div className="flex flex-wrap gap-3 justify-center">
+              <a href={`https://wa.me/${(settings.payment_whatsapp_number || CONTACT.WHATSAPP_NUMBER).replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="inline-block px-6 py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-colors">
+                Contacter par WhatsApp
+              </a>
+              <Link href="/fields" className="inline-block px-6 py-3 bg-white/20 text-white font-bold rounded-xl hover:bg-white/30 transition-colors">
+                Nouvelle réservation
+              </Link>
+            </div>
           </div>
         )}
         {isPendingPayment && !expired && (
