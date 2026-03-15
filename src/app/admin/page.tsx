@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/stores/authStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { Field } from '@/types';
+import { Field } from '@/lib/hooks/useField';
 import toast from 'react-hot-toast';
 
 // ── Pricing Rules Section ───────────────────────────────────────────────────
@@ -390,7 +390,7 @@ function BookingSearchFilter({ bookings, onFiltered }: { bookings: any[]; onFilt
   );
 }
 
-
+function CancellationPolicyEditor() {
   const [policy, setPolicy] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -1149,7 +1149,7 @@ export default function AdminPage() {
     setEditingField(field);
     setFieldData({
       name: field.name,
-      description: field.description,
+      description: field.description || '',
       location: field.location,
       price_per_hour: field.price_per_hour.toString(),
       capacity: field.capacity.toString(),
@@ -2714,7 +2714,7 @@ export default function AdminPage() {
             </div>
 
             {/* Cancellation policy editor */}
-            <PolicyEditor />
+            <CancellationPolicyEditor />
 
             {/* Payment instructions editor */}
             <PaymentInstructionsEditor />

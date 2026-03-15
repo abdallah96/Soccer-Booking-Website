@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { Suspense, useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { formatPrice } from '@/lib/utils/pricing';
@@ -70,7 +70,7 @@ function CountdownTimer({ expiresAt, onExpired }: { expiresAt: string; onExpired
   );
 }
 
-export default function BookingConfirmationPage() {
+function BookingConfirmationContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const bookingId = searchParams.get('id');
@@ -316,5 +316,17 @@ export default function BookingConfirmationPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function BookingConfirmationPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-white/60 text-lg">Chargement...</div>
+      </div>
+    }>
+      <BookingConfirmationContent />
+    </Suspense>
   );
 }
