@@ -234,15 +234,21 @@ async function handleDelete(request: AuthenticatedRequest) {
       );
     }
 
-    // Only allow deleting admins (not super_admin or regular users)
-    if (userToDelete.role !== 'admin') {
+    // Super_admin can delete admins or regular users (not other super_admins)
+    if (userToDelete.role === 'super_admin') {
       return NextResponse.json(
-        { error: 'Can only delete admin accounts' },
+        { error: 'Cannot delete a Super Admin' },
+        { status: 403 }
+      );
+    }
+    if (userToDelete.role !== 'admin' && userToDelete.role !== 'user') {
+      return NextResponse.json(
+        { error: 'Can only delete admin or user accounts' },
         { status: 403 }
       );
     }
 
-    // Delete the admin
+    // Delete the user (cascades to their bookings, reviews, subscriptions as per schema)
     const { error: deleteError } = await supabase
       .from('users')
       .delete()
@@ -251,13 +257,13 @@ async function handleDelete(request: AuthenticatedRequest) {
     if (deleteError) {
       console.error('User deletion error:', deleteError);
       return NextResponse.json(
-        { error: 'Failed to delete admin' },
+        { error: 'Failed to delete user' },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
-      message: 'Admin deleted successfully',
+      message: 'User deleted successfully',
     });
   } catch (error) {
     console.error('User deletion error:', error);

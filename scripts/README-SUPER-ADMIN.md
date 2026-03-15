@@ -24,19 +24,19 @@ This script creates the first Super Admin (CEO/Owner) account for Petit Camp.
 npm run create-super-admin <email> <name> <password> [phone]
 ```
 
-**Example:**
+**Example (use your own email, name, password — never commit real credentials):**
 ```bash
-npm run create-super-admin ceo@petitcamp.sn "Abdalah Gueye" "SecurePassword123" "+221771234567"
+npm run create-super-admin your-email@example.com "Your Name" "YourSecurePassword" "+221700000000"
 ```
 
 ### Method 2: Environment Variables
 
-Add to your `.env.local` file:
+Add to your `.env.local` file (this file is **gitignored** — safe for real values):
 ```env
-SUPER_ADMIN_EMAIL=ceo@petitcamp.sn
-SUPER_ADMIN_NAME="Abdalah Gueye"
-SUPER_ADMIN_PASSWORD=SecurePassword123
-SUPER_ADMIN_PHONE=+221771234567
+SUPER_ADMIN_EMAIL=your-email@example.com
+SUPER_ADMIN_NAME="Your Name"
+SUPER_ADMIN_PASSWORD=YourSecurePassword
+SUPER_ADMIN_PHONE=+221700000000
 ```
 
 Then run:

@@ -48,6 +48,9 @@ lerna-debug.log*
 *.env
 *.env.json
 http-client.env.json
+# Local script credentials (e.g. for create-super-admin)
+scripts/.env
+scripts/.env.local
 
 # IDE and Editor files
 .vscode/
