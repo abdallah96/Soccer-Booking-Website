@@ -244,25 +244,12 @@ export default function FieldDetailPage() {
         amount: calculatedPrice,
       });
 
-      toast.success('Réservation créée avec succès !');
+      toast.success('Réservation créée ! Finalisez votre paiement.');
       setShowBookingModal(false);
       setGuestBookingData({ phone: '', name: '', email: '' });
-      
-      // Refresh availability
-      if (date) {
-        const response = await fetch(
-          `/api/bookings/availability?field_id=${field?.id}&date=${date}`
-        );
-        const data = await response.json();
-        if (data.bookedSlots) {
-          setBookedSlots(new Set(data.bookedSlots));
-        }
-      }
 
-      // Redirect logged-in users to my-bookings, others stay on page
-      if (user) {
-        router.push('/my-bookings');
-      }
+      // Always redirect to confirmation page with payment instructions
+      router.push(`/booking-confirmation?id=${result.booking?.id}`);
     } catch (error) {
       toast.error('Erreur lors de la réservation');
     } finally {
@@ -865,12 +852,18 @@ export default function FieldDetailPage() {
                   </div>
 
                   <div className="pt-4 border-t border-white/10">
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center justify-between mb-2">
                       <span className="text-white/80 font-medium">Total</span>
                       <span className="text-2xl font-black text-red-500">
                         {calculatedPrice > 0 ? formatPrice(calculatedPrice) : '---'}
                       </span>
                     </div>
+                    {calculatedPrice > 0 && (
+                      <div className="flex items-center justify-between mb-4 bg-orange-500/10 border border-orange-500/20 rounded-lg px-3 py-2">
+                        <span className="text-orange-300 text-sm font-black">Acompte à payer (50%)</span>
+                        <span className="text-orange-300 text-sm font-black">{formatPrice(Math.round(calculatedPrice * 0.5))}</span>
+                      </div>
+                    )}
                     <button
                       type="submit"
                       disabled={isBooking || !guestBookingData.phone}
@@ -925,12 +918,18 @@ export default function FieldDetailPage() {
                   </div>
 
                   <div className="pt-4 border-t border-white/10">
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center justify-between mb-2">
                       <span className="text-white/80 font-medium">Total</span>
                       <span className="text-2xl font-black text-red-500">
                         {calculatedPrice > 0 ? formatPrice(calculatedPrice) : '---'}
                       </span>
                     </div>
+                    {calculatedPrice > 0 && (
+                      <div className="flex items-center justify-between mb-4 bg-orange-500/10 border border-orange-500/20 rounded-lg px-3 py-2">
+                        <span className="text-orange-300 text-sm font-black">Acompte à payer (50%)</span>
+                        <span className="text-orange-300 text-sm font-black">{formatPrice(Math.round(calculatedPrice * 0.5))}</span>
+                      </div>
+                    )}
                     <button
                       onClick={handleBooking}
                       disabled={isBooking || !bookingSlotDate || !bookingSlotTime}

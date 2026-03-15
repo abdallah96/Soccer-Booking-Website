@@ -7,7 +7,543 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Field } from '@/types';
 import toast from 'react-hot-toast';
 
-type ActiveSection = 'dashboard' | 'bookings' | 'availability' | 'fields' | 'users' | 'reviews' | 'settings';
+// ── Pricing Rules Section ───────────────────────────────────────────────────
+
+function PricingSection({ fields }: { fields: any[] }) {
+  const [rules, setRules] = useState<any[]>([]);
+  const [selectedField, setSelectedField] = useState('');
+  const [form, setForm] = useState({ name: '', day_type: 'all', hour_start: 8, hour_end: 18, price_per_hour: '' });
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
+
+  const fieldId = selectedField || fields[0]?.id;
+
+  useEffect(() => {
+    if (!fieldId) return;
+    fetch(`/api/admin/pricing-rules?field_id=${fieldId}`, { credentials: 'include' })
+      .then(r => r.json()).then(d => setRules(d.rules || []));
+  }, [fieldId]);
+
+  const DAY_LABELS: Record<string, string> = { all: 'Tous les jours', weekday: 'Semaine (Lun–Ven)', weekend: 'Week-end (Sam–Dim)' };
+
+  const save = async () => {
+    if (!form.name || !form.price_per_hour) return toast.error('Nom et prix requis');
+    setSaving(true);
+    try {
+      const res = await fetch('/api/admin/pricing-rules', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ ...form, field_id: fieldId, hour_start: Number(form.hour_start), hour_end: Number(form.hour_end), price_per_hour: Number(form.price_per_hour) }),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        setRules(prev => [...prev, d.rule]);
+        setForm({ name: '', day_type: 'all', hour_start: 8, hour_end: 18, price_per_hour: '' });
+        toast.success('Règle créée ✅');
+      } else toast.error('Erreur création');
+    } finally { setSaving(false); }
+  };
+
+  const toggle = async (rule: any) => {
+    const res = await fetch('/api/admin/pricing-rules', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ id: rule.id, is_active: !rule.is_active }),
+    });
+    if (res.ok) setRules(prev => prev.map(r => r.id === rule.id ? { ...r, is_active: !r.is_active } : r));
+  };
+
+  const del = async (id: string) => {
+    if (!confirm('Supprimer cette règle ?')) return;
+    setDeleting(id);
+    const res = await fetch(`/api/admin/pricing-rules?id=${id}`, { method: 'DELETE', credentials: 'include' });
+    if (res.ok) setRules(prev => prev.filter(r => r.id !== id));
+    setDeleting(null);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl lg:text-3xl font-black text-white mb-1">Grille tarifaire</h2>
+        <p className="text-white/50 text-sm">Définissez des prix différents selon le jour et l'heure. Les règles remplacent le tarif de base du terrain.</p>
+      </div>
+
+      {fields.length > 1 && (
+        <select value={fieldId} onChange={e => setSelectedField(e.target.value)}
+          className="px-4 py-2 bg-gray-800 border border-white/20 rounded-lg text-white text-sm">
+          {fields.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+        </select>
+      )}
+
+      {/* Existing rules */}
+      {rules.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-white/60 text-xs font-mono uppercase mb-2">Règles actives</div>
+          {rules.map(rule => (
+            <div key={rule.id} className={`flex items-center justify-between rounded-xl px-4 py-3 border ${rule.is_active ? 'bg-white/5 border-white/10' : 'bg-gray-800/30 border-white/5 opacity-50'}`}>
+              <div className="flex-1 min-w-0">
+                <div className="text-white font-black text-sm truncate">{rule.name}</div>
+                <div className="text-white/50 text-xs mt-0.5">
+                  {DAY_LABELS[rule.day_type]} · {String(rule.hour_start).padStart(2,'0')}h → {String(rule.hour_end).padStart(2,'0')}h
+                </div>
+              </div>
+              <div className="text-red-400 font-black text-sm mx-4 whitespace-nowrap">
+                {Number(rule.price_per_hour).toLocaleString('fr-FR')} FCFA/h
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => toggle(rule)} className={`px-3 py-1 text-xs font-black rounded-lg transition-colors ${rule.is_active ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-white/10 text-white/50 hover:bg-white/20'}`}>
+                  {rule.is_active ? 'Actif' : 'Inactif'}
+                </button>
+                <button onClick={() => del(rule.id)} disabled={deleting === rule.id} className="px-3 py-1 text-xs font-black rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-50">
+                  ✕
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Add rule form */}
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
+        <div className="text-white font-black text-sm uppercase tracking-wider">+ Nouvelle règle tarifaire</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input value={form.name} onChange={e => setForm(f => ({...f, name: e.target.value}))}
+            placeholder="Nom ex: Tarif soirée week-end"
+            className="px-4 py-3 bg-gray-800 border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:border-red-500/50" />
+          <select value={form.day_type} onChange={e => setForm(f => ({...f, day_type: e.target.value}))}
+            className="px-4 py-3 bg-gray-800 border border-white/20 rounded-xl text-white text-sm">
+            <option value="all">Tous les jours</option>
+            <option value="weekday">Semaine (Lun–Ven)</option>
+            <option value="weekend">Week-end (Sam–Dim)</option>
+          </select>
+          <div className="flex gap-2 items-center">
+            <label className="text-white/60 text-xs w-12">De</label>
+            <input type="number" min={0} max={23} value={form.hour_start} onChange={e => setForm(f => ({...f, hour_start: Number(e.target.value)}))}
+              className="flex-1 px-4 py-3 bg-gray-800 border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:border-red-500/50" />
+            <label className="text-white/60 text-xs w-4">h</label>
+            <label className="text-white/60 text-xs w-8">à</label>
+            <input type="number" min={0} max={23} value={form.hour_end} onChange={e => setForm(f => ({...f, hour_end: Number(e.target.value)}))}
+              className="flex-1 px-4 py-3 bg-gray-800 border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:border-red-500/50" />
+            <label className="text-white/60 text-xs w-4">h</label>
+          </div>
+          <div className="flex gap-2 items-center">
+            <input type="number" min={0} value={form.price_per_hour} onChange={e => setForm(f => ({...f, price_per_hour: e.target.value}))}
+              placeholder="Prix/heure ex: 25000"
+              className="flex-1 px-4 py-3 bg-gray-800 border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:border-red-500/50" />
+            <span className="text-white/50 text-xs">FCFA/h</span>
+          </div>
+        </div>
+        <button onClick={save} disabled={saving}
+          className="px-6 py-3 bg-red-600 text-white font-black rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 text-sm">
+          {saving ? 'Création...' : 'Créer la règle'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Subscriptions Section ───────────────────────────────────────────────────
+
+function SubscriptionsSection({ fields, allUsers }: { fields: any[]; allUsers: any[] }) {
+  const [subs, setSubs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    user_id: '', field_id: '', day_of_week: 1, start_time: '19:00',
+    duration: 60, payment_method: 'wave', discount_percent: 10,
+    start_date: new Date().toISOString().split('T')[0], end_date: '',
+  });
+
+  const DAYS_FR = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+
+  useEffect(() => {
+    fetch('/api/admin/subscriptions', { credentials: 'include' })
+      .then(r => r.json()).then(d => { setSubs(d.subscriptions || []); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const save = async () => {
+    if (!form.user_id || !form.field_id) return toast.error('Utilisateur et terrain requis');
+    setSaving(true);
+    try {
+      const res = await fetch('/api/admin/subscriptions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ ...form, end_date: form.end_date || null }),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        setSubs(prev => [d.subscription, ...prev]);
+        setShowForm(false);
+        toast.success('Abonnement créé ✅');
+      } else {
+        const d = await res.json();
+        toast.error(d.error || 'Erreur création');
+      }
+    } finally { setSaving(false); }
+  };
+
+  const updateStatus = async (id: string, status: string) => {
+    const res = await fetch('/api/admin/subscriptions', {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ id, status }),
+    });
+    if (res.ok) setSubs(prev => prev.map(s => s.id === id ? { ...s, status } : s));
+    else toast.error('Erreur mise à jour');
+  };
+
+  const statusColor = (s: string) => s === 'active' ? 'bg-green-500/20 text-green-400 border-green-500/30' : s === 'paused' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' : 'bg-red-500/20 text-red-400 border-red-500/30';
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-xl lg:text-3xl font-black text-white mb-1">Abonnements</h2>
+          <p className="text-white/50 text-sm">Créneaux récurrents hebdomadaires avec remise automatique. Un booking est généré automatiquement chaque semaine.</p>
+        </div>
+        <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 bg-red-600 text-white text-sm font-black rounded-xl hover:bg-red-700 transition-colors">
+          + Nouvel abonnement
+        </button>
+      </div>
+
+      {/* Create form */}
+      {showForm && (
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
+          <div className="text-white font-black text-sm uppercase tracking-wider mb-2">Nouveau abonnement</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-white/60 text-xs uppercase mb-1 block">Client *</label>
+              <select value={form.user_id} onChange={e => setForm(f => ({...f, user_id: e.target.value}))}
+                className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-xl text-white text-sm">
+                <option value="">Sélectionner un client</option>
+                {allUsers.filter(u => u.role === 'user').map(u => (
+                  <option key={u.id} value={u.id}>{u.name} {u.phone ? `(${u.phone})` : ''}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-white/60 text-xs uppercase mb-1 block">Terrain *</label>
+              <select value={form.field_id} onChange={e => setForm(f => ({...f, field_id: e.target.value}))}
+                className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-xl text-white text-sm">
+                <option value="">Sélectionner</option>
+                {fields.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-white/60 text-xs uppercase mb-1 block">Jour de la semaine</label>
+              <select value={form.day_of_week} onChange={e => setForm(f => ({...f, day_of_week: Number(e.target.value)}))}
+                className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-xl text-white text-sm">
+                {['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'].map((d, i) => (
+                  <option key={i} value={i}>{d}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-white/60 text-xs uppercase mb-1 block">Heure de début</label>
+              <input type="time" value={form.start_time} onChange={e => setForm(f => ({...f, start_time: e.target.value}))}
+                className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-xl text-white text-sm" />
+            </div>
+            <div>
+              <label className="text-white/60 text-xs uppercase mb-1 block">Durée</label>
+              <select value={form.duration} onChange={e => setForm(f => ({...f, duration: Number(e.target.value)}))}
+                className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-xl text-white text-sm">
+                <option value={60}>1 heure</option>
+                <option value={90}>1h30</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-white/60 text-xs uppercase mb-1 block">Remise abonné (%)</label>
+              <input type="number" min={0} max={50} value={form.discount_percent} onChange={e => setForm(f => ({...f, discount_percent: Number(e.target.value)}))}
+                className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-xl text-white text-sm" />
+            </div>
+            <div>
+              <label className="text-white/60 text-xs uppercase mb-1 block">Date de début</label>
+              <input type="date" value={form.start_date} onChange={e => setForm(f => ({...f, start_date: e.target.value}))}
+                className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-xl text-white text-sm" />
+            </div>
+            <div>
+              <label className="text-white/60 text-xs uppercase mb-1 block">Date de fin (optionnel)</label>
+              <input type="date" value={form.end_date} onChange={e => setForm(f => ({...f, end_date: e.target.value}))}
+                className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-xl text-white text-sm" />
+            </div>
+            <div>
+              <label className="text-white/60 text-xs uppercase mb-1 block">Paiement</label>
+              <select value={form.payment_method} onChange={e => setForm(f => ({...f, payment_method: e.target.value}))}
+                className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-xl text-white text-sm">
+                <option value="wave">Wave</option>
+                <option value="orange_money">Orange Money</option>
+                <option value="cash">Espèces</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button onClick={save} disabled={saving}
+              className="px-6 py-3 bg-red-600 text-white font-black rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 text-sm">
+              {saving ? 'Création...' : 'Créer l\'abonnement'}
+            </button>
+            <button onClick={() => setShowForm(false)}
+              className="px-6 py-3 bg-white/10 text-white rounded-xl hover:bg-white/20 transition-colors text-sm">
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Subscriptions list */}
+      {loading ? (
+        <div className="text-center py-12 text-white/40">Chargement...</div>
+      ) : subs.length === 0 ? (
+        <div className="text-center py-12 text-white/40">Aucun abonnement actif</div>
+      ) : (
+        <div className="space-y-3">
+          {subs.map(sub => (
+            <div key={sub.id} className="bg-white/5 border border-white/10 rounded-2xl p-4 lg:p-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <span className="text-white font-black">{sub.user?.name || 'Client inconnu'}</span>
+                    <span className={`px-2 py-0.5 text-xs font-black rounded border ${statusColor(sub.status)}`}>
+                      {sub.status === 'active' ? '● Actif' : sub.status === 'paused' ? '⏸ Pausé' : '✕ Annulé'}
+                    </span>
+                    <span className="px-2 py-0.5 text-xs bg-purple-500/20 text-purple-300 rounded border border-purple-500/30 font-black">
+                      -{sub.discount_percent}%
+                    </span>
+                  </div>
+                  <div className="text-white/60 text-sm">
+                    {DAYS_FR[sub.day_of_week]} · {sub.start_time} · {sub.duration === 60 ? '1h' : '1h30'} · {sub.field?.name}
+                  </div>
+                  {sub.user?.phone && <div className="text-white/40 text-xs mt-0.5">📞 {sub.user.phone}</div>}
+                  {sub.next_booking_date && (
+                    <div className="text-blue-400/70 text-xs mt-1">
+                      Prochain booking : {new Date(sub.next_booking_date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  {sub.status === 'active' && (
+                    <button onClick={() => updateStatus(sub.id, 'paused')}
+                      className="px-3 py-2 bg-yellow-500/20 text-yellow-400 text-xs font-black rounded-lg border border-yellow-500/30 hover:bg-yellow-500/30 transition-colors">
+                      ⏸ Pausé
+                    </button>
+                  )}
+                  {sub.status === 'paused' && (
+                    <button onClick={() => updateStatus(sub.id, 'active')}
+                      className="px-3 py-2 bg-green-500/20 text-green-400 text-xs font-black rounded-lg border border-green-500/30 hover:bg-green-500/30 transition-colors">
+                      ▶ Reprendre
+                    </button>
+                  )}
+                  {sub.status !== 'cancelled' && (
+                    <button onClick={() => updateStatus(sub.id, 'cancelled')}
+                      className="px-3 py-2 bg-red-500/20 text-red-400 text-xs font-black rounded-lg border border-red-500/30 hover:bg-red-500/30 transition-colors">
+                      ✕ Annuler
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+
+function BookingSearchFilter({ bookings, onFiltered }: { bookings: any[]; onFiltered: (b: any[]) => void }) {
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('all');
+
+  useEffect(() => {
+    let filtered = bookings;
+    if (status !== 'all') filtered = filtered.filter(b => b.status === status);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      filtered = filtered.filter(b =>
+        b.user?.name?.toLowerCase().includes(q) ||
+        b.user?.phone?.includes(q) ||
+        b.user?.email?.toLowerCase().includes(q) ||
+        b.date?.includes(q)
+      );
+    }
+    onFiltered(filtered);
+  }, [search, status, bookings]);
+
+  return (
+    <div className="flex flex-col sm:flex-row gap-3">
+      <input
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        placeholder="Rechercher par nom, téléphone, date..."
+        className="flex-1 px-4 py-2 bg-gray-800 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-red-500/50"
+      />
+      <select
+        value={status}
+        onChange={e => setStatus(e.target.value)}
+        className="px-4 py-2 bg-gray-800 border border-white/20 rounded-lg text-white text-sm focus:outline-none"
+      >
+        <option value="all">Tous les statuts</option>
+        <option value="pending_payment">En attente paiement</option>
+        <option value="confirmed">Confirmées</option>
+        <option value="pending">En attente</option>
+        <option value="cancelled">Annulées</option>
+      </select>
+    </div>
+  );
+}
+
+
+  const [policy, setPolicy] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(r => r.json())
+      .then(d => { setPolicy(d.settings?.cancellation_policy || ''); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ cancellation_policy: policy }),
+      });
+      if (res.ok) toast.success('Politique d\'annulation sauvegardée ✅');
+      else toast.error('Erreur lors de la sauvegarde');
+    } catch { toast.error('Erreur lors de la sauvegarde'); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
+      <div className="flex items-center gap-3 mb-1">
+        <span className="text-2xl">📋</span>
+        <div>
+          <div className="text-white font-black">Politique d'annulation</div>
+          <div className="text-white/50 text-sm">Visible par les clients sur la page de confirmation</div>
+        </div>
+      </div>
+      {loading ? (
+        <div className="text-white/40 text-sm">Chargement...</div>
+      ) : (
+        <>
+          <textarea
+            value={policy}
+            onChange={e => setPolicy(e.target.value)}
+            rows={4}
+            className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white text-sm resize-none focus:outline-none focus:border-red-500/50"
+          />
+          <button
+            onClick={save}
+            disabled={saving}
+            className="px-6 py-2 bg-red-600 text-white font-black rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 text-sm"
+          >
+            {saving ? 'Sauvegarde...' : 'Sauvegarder'}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function PaymentInstructionsEditor() {
+  const [wave, setWave] = useState('');
+  const [om, setOm] = useState('');
+  const [whatsapp, setWhatsapp] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(r => r.json())
+      .then(d => {
+        const s = d.settings || {};
+        setWave(s.payment_instructions_wave || '');
+        setOm(s.payment_instructions_orange_money || '');
+        setWhatsapp(s.payment_whatsapp_number || '');
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          payment_instructions_wave: wave,
+          payment_instructions_orange_money: om,
+          payment_whatsapp_number: whatsapp,
+        }),
+      });
+      if (res.ok) toast.success('Instructions de paiement sauvegardées ✅');
+      else toast.error('Erreur lors de la sauvegarde');
+    } catch { toast.error('Erreur lors de la sauvegarde'); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-4">
+      <div className="flex items-center gap-3 mb-1">
+        <span className="text-2xl">💳</span>
+        <div>
+          <div className="text-white font-black">Instructions de paiement</div>
+          <div className="text-white/50 text-sm">Affichées sur la page de confirmation selon la méthode choisie</div>
+        </div>
+      </div>
+      {loading ? (
+        <div className="text-white/40 text-sm">Chargement...</div>
+      ) : (
+        <>
+          <div>
+            <label className="block text-xs font-black text-white/60 uppercase mb-2">Numéro WhatsApp de réception</label>
+            <input
+              value={whatsapp}
+              onChange={e => setWhatsapp(e.target.value)}
+              placeholder="+221789251834"
+              className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-green-500/50"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-black text-white/60 uppercase mb-2">💙 Instructions Wave</label>
+            <textarea
+              value={wave}
+              onChange={e => setWave(e.target.value)}
+              rows={3}
+              className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white text-sm resize-none focus:outline-none focus:border-blue-500/50"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-black text-white/60 uppercase mb-2">🟠 Instructions Orange Money</label>
+            <textarea
+              value={om}
+              onChange={e => setOm(e.target.value)}
+              rows={3}
+              className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white text-sm resize-none focus:outline-none focus:border-orange-500/50"
+            />
+          </div>
+          <button
+            onClick={save}
+            disabled={saving}
+            className="px-6 py-2 bg-red-600 text-white font-black rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 text-sm"
+          >
+            {saving ? 'Sauvegarde...' : 'Sauvegarder tout'}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+
+type ActiveSection = 'dashboard' | 'bookings' | 'availability' | 'fields' | 'pricing' | 'subscriptions' | 'users' | 'reviews' | 'settings';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -54,6 +590,10 @@ export default function AdminPage() {
   const [editingReply, setEditingReply] = useState<string | null>(null);
   const [showContactUserForm, setShowContactUserForm] = useState(false);
   const [contactUserData, setContactUserData] = useState({ name: '', email: '', phone: '', password: '' });
+  // Cancellation modal state
+  const [cancellationModal, setCancellationModal] = useState<{ bookingId: string; bookingInfo: string } | null>(null);
+  const [cancellationReason, setCancellationReason] = useState('');
+  const [filteredBookings, setFilteredBookings] = useState<any[]>([]);
   
   // Availability blocking state
   const [blockedSlots, setBlockedSlots] = useState<any[]>([]);
@@ -89,7 +629,7 @@ export default function AdminPage() {
       return;
     }
 
-    if (user.role !== 'admin') {
+    if (user.role !== 'admin' && user.role !== 'super_admin') {
       toast.error('Accès refusé. Admin uniquement.');
       router.push('/');
       return;
@@ -523,18 +1063,18 @@ export default function AdminPage() {
     }
   };
 
-  const handleConfirmBooking = async (bookingId: string, status: 'confirmed' | 'cancelled') => {
+  const handleConfirmBooking = async (bookingId: string, status: 'confirmed' | 'cancelled', cancellation_reason?: string) => {
     setUpdatingBooking(bookingId);
     try {
       const response = await fetch(`/api/admin/bookings/${bookingId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, cancellation_reason }),
       });
 
       if (response.ok) {
-        toast.success(status === 'confirmed' ? 'Réservation confirmée' : 'Réservation annulée');
+        toast.success(status === 'confirmed' ? 'Réservation confirmée ✅' : 'Réservation annulée');
         fetchBookings();
         fetchStats();
       } else {
@@ -545,6 +1085,19 @@ export default function AdminPage() {
     } finally {
       setUpdatingBooking(null);
     }
+  };
+
+  const openCancellationModal = (bookingId: string, booking: any) => {
+    const info = `${booking.user?.name || 'Client'} — ${new Date(booking.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} ${booking.time_slot}`;
+    setCancellationModal({ bookingId, bookingInfo: info });
+    setCancellationReason('');
+  };
+
+  const confirmCancellation = async () => {
+    if (!cancellationModal) return;
+    await handleConfirmBooking(cancellationModal.bookingId, 'cancelled', cancellationReason || undefined);
+    setCancellationModal(null);
+    setCancellationReason('');
   };
 
   const handleSaveField = async (e: React.FormEvent) => {
@@ -986,6 +1539,8 @@ export default function AdminPage() {
               { id: 'bookings', label: '📅', fullLabel: 'Réservations', badge: pendingCount },
               { id: 'availability', label: '📆', fullLabel: 'Disponibilités' },
               { id: 'fields', label: '⚽', fullLabel: 'Terrain' },
+              { id: 'pricing', label: '💰', fullLabel: 'Tarifs' },
+              { id: 'subscriptions', label: '🔄', fullLabel: 'Abonnements' },
               { id: 'users', label: '👥', fullLabel: 'Utilisateurs' },
               { id: 'reviews', label: '💬', fullLabel: 'Commentaires' },
               { id: 'settings', label: '⚙️', fullLabel: 'Paramètres' },
@@ -1055,31 +1610,169 @@ export default function AdminPage() {
               </button>
             </div>
 
-            {/* Stats Grid - Always visible on desktop */}
-        {stats && (
-              <div className={`grid grid-cols-2 lg:grid-cols-4 gap-4 ${showStats ? '' : 'hidden lg:grid'}`}>
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 lg:p-6">
-                  <div className="text-white/60 text-sm lg:text-base mb-2">Total réservations</div>
-                  <div className="text-2xl lg:text-4xl font-black text-white">{stats.stats?.total_bookings || 0}</div>
-              </div>
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 lg:p-6">
-                  <div className="text-white/60 text-sm lg:text-base mb-2">Confirmées</div>
-                  <div className="text-2xl lg:text-4xl font-black text-green-400">{stats.stats?.confirmed_bookings || 0}</div>
-            </div>
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 lg:p-6">
-                  <div className="text-white/60 text-sm lg:text-base mb-2">Revenus total</div>
-                  <div className="text-xl lg:text-3xl font-black text-red-400">
-                    {new Intl.NumberFormat('fr-FR').format(stats.stats?.total_revenue || 0)} <span className="text-sm lg:text-lg">FCFA</span>
-              </div>
-            </div>
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-4 lg:p-6">
-                  <div className="text-white/60 text-sm lg:text-base mb-2">30 derniers jours</div>
-                  <div className="text-xl lg:text-3xl font-black text-red-400">
-                    {new Intl.NumberFormat('fr-FR').format(stats.stats?.revenue_last_30_days || 0)} <span className="text-sm lg:text-lg">FCFA</span>
-              </div>
-            </div>
+            {/* Financial Dashboard - Always visible on desktop */}
+            {stats && (
+              <div className={`space-y-4 ${showStats ? '' : 'hidden lg:block'}`}>
+                {/* Revenue Cards */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-4 lg:p-6">
+                    <div className="text-green-400/80 text-xs lg:text-sm font-mono uppercase tracking-wider mb-2">✅ Encaissé</div>
+                    <div className="text-xl lg:text-3xl font-black text-green-400">
+                      {new Intl.NumberFormat('fr-FR').format(stats.stats?.total_revenue || 0)}
+                    </div>
+                    <div className="text-green-400/60 text-xs mt-1">FCFA</div>
+                  </div>
+                  <div className="bg-orange-500/10 border border-orange-500/30 rounded-2xl p-4 lg:p-6">
+                    <div className="text-orange-400/80 text-xs lg:text-sm font-mono uppercase tracking-wider mb-2">⏳ En attente</div>
+                    <div className="text-xl lg:text-3xl font-black text-orange-400">
+                      {new Intl.NumberFormat('fr-FR').format(stats.stats?.pending_revenue || 0)}
+                    </div>
+                    <div className="text-orange-400/60 text-xs mt-1">FCFA</div>
+                  </div>
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-4 lg:p-6">
+                    <div className="text-red-400/80 text-xs lg:text-sm font-mono uppercase tracking-wider mb-2">❌ Annulé</div>
+                    <div className="text-xl lg:text-3xl font-black text-red-400">
+                      {new Intl.NumberFormat('fr-FR').format(stats.stats?.cancelled_revenue || 0)}
+                    </div>
+                    <div className="text-red-400/60 text-xs mt-1">FCFA</div>
+                  </div>
+                  <div className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-4 lg:p-6">
+                    <div className="text-blue-400/80 text-xs lg:text-sm font-mono uppercase tracking-wider mb-2">📅 30 jours</div>
+                    <div className="text-xl lg:text-3xl font-black text-blue-400">
+                      {new Intl.NumberFormat('fr-FR').format(stats.stats?.revenue_last_30_days || 0)}
+                    </div>
+                    <div className="text-blue-400/60 text-xs mt-1">FCFA</div>
+                  </div>
+                </div>
+
+                {/* Booking Count Cards */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 lg:p-6">
+                    <div className="text-white/50 text-xs lg:text-sm mb-2">Total réservations</div>
+                    <div className="text-2xl lg:text-4xl font-black text-white">{stats.stats?.total_bookings || 0}</div>
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 lg:p-6">
+                    <div className="text-white/50 text-xs lg:text-sm mb-2">Confirmées</div>
+                    <div className="text-2xl lg:text-4xl font-black text-green-400">{stats.stats?.confirmed_bookings || 0}</div>
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 lg:p-6">
+                    <div className="text-white/50 text-xs lg:text-sm mb-2">Annulées</div>
+                    <div className="text-2xl lg:text-4xl font-black text-red-400">{stats.stats?.cancelled_bookings || 0}</div>
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 lg:p-6">
+                    <div className="text-white/50 text-xs lg:text-sm mb-2">Taux d'occupation</div>
+                    <div className="text-2xl lg:text-4xl font-black text-blue-400">{stats.stats?.occupation_rate || 0}%</div>
+                    <div className="text-white/30 text-xs mt-1">30 derniers jours</div>
+                  </div>
+                </div>
+
+                {/* Clients stats */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-purple-500/10 border border-purple-500/30 rounded-2xl p-4 lg:p-6">
+                    <div className="text-purple-400/80 text-xs lg:text-sm font-mono uppercase tracking-wider mb-2">🔄 Clients récurrents</div>
+                    <div className="text-2xl lg:text-4xl font-black text-purple-400">{stats.stats?.recurring_clients || 0}</div>
+                    <div className="text-white/30 text-xs mt-1">clients avec 2+ réservations</div>
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 lg:p-6">
+                    <div className="text-white/50 text-xs lg:text-sm mb-2">Clients uniques</div>
+                    <div className="text-2xl lg:text-4xl font-black text-white">{stats.stats?.total_unique_clients || 0}</div>
+                    <div className="text-white/30 text-xs mt-1">ayant réservé au moins 1x</div>
+                  </div>
+                </div>
+
+                {/* Monthly Revenue Bar Chart */}
+                {stats.monthly_revenue && stats.monthly_revenue.length > 0 && (
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 lg:p-6">
+                    <div className="text-white font-black text-sm lg:text-base mb-4 uppercase tracking-wider">Revenus par mois (6 derniers mois)</div>
+                    <div className="flex items-end gap-2 h-28">
+                      {(() => {
+                        const maxVal = Math.max(...stats.monthly_revenue.map((m: any) => m.revenue), 1);
+                        return stats.monthly_revenue.map((m: any) => {
+                          const heightPct = Math.max((m.revenue / maxVal) * 100, m.revenue > 0 ? 4 : 0);
+                          const [year, month] = m.month.split('-');
+                          const label = new Date(Number(year), Number(month) - 1, 1)
+                            .toLocaleDateString('fr-FR', { month: 'short' });
+                          return (
+                            <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
+                              <div className="text-white/60 text-xs font-mono">
+                                {m.revenue > 0 ? `${(m.revenue / 1000).toFixed(0)}k` : ''}
+                              </div>
+                              <div
+                                className="w-full bg-red-500/70 rounded-t-md transition-all"
+                                style={{ height: `${heightPct}%`, minHeight: m.revenue > 0 ? '4px' : '0' }}
+                              />
+                              <div className="text-white/50 text-xs font-mono">{label}</div>
+                            </div>
+                          );
+                        });
+                      })()}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
+
+            {/* 🔔 Reminder Flags — bookings in next 48h needing a reminder */}
+            {(() => {
+              const now = Date.now();
+              const reminders = bookings.filter(b => {
+                if (b.status !== 'confirmed') return false;
+                const bookingTime = new Date(b.date).getTime();
+                const hoursUntil = (bookingTime - now) / 3600000;
+                return hoursUntil > 0 && hoursUntil <= 48;
+              });
+              if (reminders.length === 0) return null;
+              const getBand = (h: number) => {
+                if (h <= 1) return { label: '🚨 Dans 1h', color: 'bg-red-500/20 border-red-500/40', badge: 'bg-red-500/30 text-red-300' };
+                if (h <= 8) return { label: '🔴 Dans 8h', color: 'bg-red-500/10 border-red-500/30', badge: 'bg-red-500/20 text-red-400' };
+                if (h <= 24) return { label: '🟠 Dans 24h', color: 'bg-orange-500/10 border-orange-500/30', badge: 'bg-orange-500/20 text-orange-400' };
+                return { label: '🟡 Dans 48h', color: 'bg-yellow-500/10 border-yellow-500/30', badge: 'bg-yellow-500/20 text-yellow-400' };
+              };
+              return (
+                <div className="space-y-3">
+                  <h3 className="text-xl lg:text-2xl text-white font-black flex items-center gap-2">
+                    <span>🔔</span> Rappels à envoyer
+                    <span className="text-sm text-yellow-400 font-normal">({reminders.length} match(s) dans les 48h)</span>
+                  </h3>
+                  <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                    {reminders.map(booking => {
+                      const phone = booking.user?.phone?.replace(/\D/g, '');
+                      const bookingDate = new Date(booking.date).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+                      const hoursUntil = (new Date(booking.date).getTime() - now) / 3600000;
+                      const band = getBand(hoursUntil);
+                      const msg = encodeURIComponent(`Bonjour ${booking.user?.name || ''} 👋\n\nRappel : vous avez un match chez Petit Camp !\n\n📅 ${bookingDate}\n⏰ ${booking.time_slot}\n\nÀ bientôt ! ⚽`);
+                      return (
+                        <div key={booking.id} className={`rounded-xl p-4 border ${band.color}`}>
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <div className="text-white font-black text-sm">{booking.user?.name || 'N/A'}</div>
+                              <div className="text-white/70 text-xs">📅 {bookingDate} · ⏰ {booking.time_slot}</div>
+                              {booking.user?.phone && <div className="text-white/50 text-xs mt-1">📞 {booking.user.phone}</div>}
+                            </div>
+                            <span className={`text-xs font-black px-2 py-1 rounded ${band.badge}`}>
+                              {Math.round(hoursUntil)}h
+                            </span>
+                          </div>
+                          <div className="text-xs text-white/50 mb-2">{band.label}</div>
+                          {phone ? (
+                            <a
+                              href={`https://wa.me/${phone}?text=${msg}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-center gap-2 w-full py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-black rounded-lg transition-colors"
+                            >
+                              <span>💬</span> Envoyer rappel WhatsApp
+                            </a>
+                          ) : (
+                            <div className="text-white/30 text-xs text-center">Pas de numéro enregistré</div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Recent Pending Bookings */}
             {pendingCount > 0 && (
@@ -1142,7 +1835,7 @@ export default function AdminPage() {
                             ✓ {booking.status === 'pending_payment' ? 'Paiement reçu' : 'Confirmer'}
                           </button>
                           <button
-                            onClick={() => handleConfirmBooking(booking.id, 'cancelled')}
+                            onClick={() => openCancellationModal(booking.id, booking)}
                             disabled={updatingBooking === booking.id}
                             className="px-4 py-2 lg:py-3 bg-red-500/20 text-red-400 text-sm lg:text-base font-black rounded-lg border border-red-500/30 hover:bg-red-500/30 transition-colors"
                           >
@@ -1168,7 +1861,7 @@ export default function AdminPage() {
         {/* BOOKINGS */}
         {activeSection === 'bookings' && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <h2 className="text-xl lg:text-3xl font-black text-white">Réservations</h2>
               <button
                 onClick={() => setShowManualBooking(true)}
@@ -1178,13 +1871,19 @@ export default function AdminPage() {
               </button>
             </div>
 
+            <BookingSearchFilter bookings={bookings} onFiltered={setFilteredBookings} />
+
             {bookings.length === 0 ? (
               <div className="text-center py-12 text-white/40">
                 Aucune réservation
             </div>
+            ) : filteredBookings.length === 0 ? (
+              <div className="text-center py-12 text-white/40">
+                Aucun résultat pour cette recherche
+              </div>
             ) : (
               <div className="space-y-3">
-                {bookings.map((booking) => (
+                {filteredBookings.map((booking) => (
                   <div
                     key={booking.id}
                     className={`rounded-xl p-4 border ${
@@ -1269,6 +1968,52 @@ export default function AdminPage() {
                       )}
                     </div>
                     
+                    {/* Cancellation reason */}
+                    {booking.status === 'cancelled' && booking.cancellation_reason && (
+                      <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 mb-3 text-xs">
+                        <div className="text-red-400/80 font-mono uppercase mb-1">
+                          Motif · {booking.cancelled_by === 'system' ? 'Système (expiration)' : booking.cancelled_by === 'admin' ? 'Admin' : 'Client'}
+                        </div>
+                        <div className="text-red-300">{booking.cancellation_reason}</div>
+                      </div>
+                    )}
+
+                    {/* WhatsApp contact button - show for pending and confirmed bookings with a phone */}
+                    {booking.user?.phone && booking.status !== 'cancelled' && (() => {
+                      const phone = booking.user.phone.replace(/\D/g, '');
+                      const bookingDate = new Date(booking.date).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+                      const isReminder = booking.status === 'confirmed' && (() => {
+                        const bookingDateTime = new Date(booking.date);
+                        const hoursUntil = (bookingDateTime.getTime() - Date.now()) / 3600000;
+                        return hoursUntil > 0 && hoursUntil <= 48;
+                      })();
+                      const msgConfirm = encodeURIComponent(`Bonjour ${booking.user.name || ''} 👋\n\nVotre réservation chez Petit Camp est confirmée ✅\n\n📅 ${bookingDate}\n⏰ ${booking.time_slot}\n💰 ${booking.amount?.toLocaleString()} FCFA\n\nÀ bientôt sur le terrain !`);
+                      const msgReminder = encodeURIComponent(`Bonjour ${booking.user.name || ''} 👋\n\nRappel : vous avez un match chez Petit Camp demain !\n\n📅 ${bookingDate}\n⏰ ${booking.time_slot}\n\nÀ bientôt ! ⚽`);
+                      const msgPayment = encodeURIComponent(`Bonjour ${booking.user.name || ''} 👋\n\nVotre réservation Petit Camp est en attente de paiement.\n\n📅 ${bookingDate}\n⏰ ${booking.time_slot}\n💰 Acompte : ${Math.round((booking.amount || 0) * 0.5).toLocaleString()} FCFA\n\nMerci d'effectuer le paiement pour confirmer votre créneau.`);
+                      const msg = booking.status === 'pending_payment' ? msgPayment : isReminder ? msgReminder : msgConfirm;
+                      return (
+                        <div className="flex gap-2 mt-2">
+                          <a
+                            href={`https://wa.me/${phone}?text=${msg}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-black transition-colors ${
+                              isReminder
+                                ? 'bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 hover:bg-yellow-500/30'
+                                : 'bg-green-500/20 border border-green-500/30 text-green-300 hover:bg-green-500/30'
+                            }`}
+                          >
+                            <span>💬</span>
+                            {booking.status === 'pending_payment'
+                              ? 'Relance paiement'
+                              : isReminder
+                              ? '🔔 Envoyer rappel'
+                              : 'WhatsApp client'}
+                          </a>
+                        </div>
+                      );
+                    })()}
+
                     {(booking.status === 'pending' || booking.status === 'pending_payment') && (
                       <div className="flex gap-2 mt-3 pt-3 border-t border-white/10">
                         <button
@@ -1279,7 +2024,7 @@ export default function AdminPage() {
                           ✓ {booking.status === 'pending_payment' ? 'Paiement reçu' : 'Confirmer'}
                         </button>
                         <button
-                          onClick={() => handleConfirmBooking(booking.id, 'cancelled')}
+                          onClick={() => openCancellationModal(booking.id, booking)}
                           disabled={updatingBooking === booking.id}
                           className="flex-1 py-2 bg-red-500/20 text-red-400 text-sm font-black rounded-lg border border-red-500/30"
                         >
@@ -1920,10 +2665,59 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* PRICING RULES */}
+        {activeSection === 'pricing' && (
+          <div className="space-y-6">
+            <PricingSection fields={fields} />
+          </div>
+        )}
+
+        {/* SUBSCRIPTIONS */}
+        {activeSection === 'subscriptions' && (
+          <div className="space-y-6">
+            <SubscriptionsSection fields={fields} allUsers={users} />
+          </div>
+        )}
+
         {/* SETTINGS */}
         {activeSection === 'settings' && (
           <div className="space-y-4">
             <h2 className="text-xl font-black text-white mb-4">Paramètres</h2>
+
+            {/* Export CSV */}
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">📊</span>
+                  <div>
+                    <div className="text-white font-black">Export des réservations</div>
+                    <div className="text-white/50 text-sm">Télécharger en CSV (compatible Excel)</div>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <a
+                    href="/api/admin/export"
+                    download
+                    className="px-4 py-2 bg-green-600 text-white text-sm font-black rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    Tout exporter
+                  </a>
+                  <a
+                    href="/api/admin/export?status=confirmed"
+                    download
+                    className="px-4 py-2 bg-blue-600/80 text-white text-sm font-black rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Confirmées
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* Cancellation policy editor */}
+            <PolicyEditor />
+
+            {/* Payment instructions editor */}
+            <PaymentInstructionsEditor />
             
             <button
               onClick={() => setShowPasswordForm(!showPasswordForm)}
@@ -2411,6 +3205,64 @@ export default function AdminPage() {
                 </form>
               </div>
                             </div>
+      )}
+
+      {/* Cancellation Modal with Motif */}
+      {cancellationModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
+          <div className="bg-gray-900 border border-red-500/30 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <h3 className="text-xl font-black text-white mb-1">Annuler la réservation</h3>
+            <p className="text-white/50 text-sm mb-5">{cancellationModal.bookingInfo}</p>
+
+            <label className="block text-sm font-black text-white/80 mb-2 uppercase tracking-wider">
+              Motif d'annulation
+            </label>
+            {/* Quick presets */}
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              {[
+                'Retard de paiement',
+                'Retard de réservation',
+                'Terrain indisponible',
+                'Demande du client',
+              ].map((preset) => (
+                <button
+                  key={preset}
+                  onClick={() => setCancellationReason(preset)}
+                  className={`px-3 py-2 text-xs rounded-lg border transition-all text-left ${
+                    cancellationReason === preset
+                      ? 'border-red-500 bg-red-500/20 text-red-300'
+                      : 'border-white/20 bg-white/5 text-white/60 hover:border-white/40'
+                  }`}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+            <textarea
+              value={cancellationReason}
+              onChange={(e) => setCancellationReason(e.target.value)}
+              placeholder="Ou saisissez un motif personnalisé... (optionnel)"
+              rows={3}
+              className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-xl text-white text-sm resize-none focus:outline-none focus:border-red-500/50 mb-5"
+            />
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setCancellationModal(null); setCancellationReason(''); }}
+                className="flex-1 py-3 bg-white/10 text-white font-black rounded-xl hover:bg-white/20 transition-colors"
+              >
+                Retour
+              </button>
+              <button
+                onClick={confirmCancellation}
+                disabled={!!updatingBooking}
+                className="flex-1 py-3 bg-red-600 text-white font-black rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {updatingBooking ? 'Annulation...' : 'Confirmer l\'annulation'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <style jsx>{`

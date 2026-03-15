@@ -54,7 +54,7 @@ export default function LoginPage() {
       toast.success('Connexion réussie !');
       
       // Redirect admins to admin panel, regular users to fields
-      if (result.user.role === 'admin') {
+      if (result.user.role === 'admin' || result.user.role === 'super_admin') {
         router.push('/admin');
       } else {
         router.push('/fields');

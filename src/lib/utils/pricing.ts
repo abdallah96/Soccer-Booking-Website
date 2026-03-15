@@ -1,66 +1,83 @@
 /**
  * Pricing utility for Petit Camp
- * Day rate (8h-18h): base price from field
- * Night rate (19h-2h): base price * 1.25 (25% more)
- * Duration options: 60 minutes (1h) or 90 minutes (1h30)
+ * Supports custom pricing rules (weekday/weekend/hour ranges)
+ * Priority: custom rule > default night/day rate
  */
 import { PRICING } from '@/lib/config/constants';
 
-/**
- * Calculate booking price based on start time, duration, and field's base price
- * 
- * @param startTime - Format: "HH:MM" (e.g., "08:00", "19:00", "00:00")
- * @param durationMinutes - 60 or 90 minutes
- * @param basePricePerHour - Base price per hour from field (day rate)
- * @returns Total price in FCFA
- */
-export function calculateBookingPrice(
-  startTime: string, 
-  durationMinutes: number, 
-  basePricePerHour: number = PRICING.DEFAULT_DAY_RATE
-): number {
-  const [hours] = startTime.split(':').map(Number);
-  const hour = hours;
-  
-  // Determine if it's day rate (8h-18h) or night rate (19h-2h)
-  // Note: 00:00 and 01:00 are considered night rate (next day)
-  const isDayRate = hour >= PRICING.DAY_HOURS_START && hour < PRICING.DAY_HOURS_END;
-  const hourlyRate = isDayRate 
-    ? basePricePerHour 
-    : Math.round(basePricePerHour * PRICING.NIGHT_RATE_MULTIPLIER);
-  
-  // Calculate total price
-  const hoursDecimal = durationMinutes / 60;
-  return Math.round(hourlyRate * hoursDecimal);
+export interface PricingRule {
+  id: string;
+  field_id: string;
+  name: string;
+  day_type: 'weekday' | 'weekend' | 'all';
+  hour_start: number;
+  hour_end: number;
+  price_per_hour: number;
+  is_active: boolean;
 }
 
-/**
- * Format price for display
- */
+export function findMatchingRule(
+  startTime: string,
+  date: string,
+  rules: PricingRule[]
+): PricingRule | null {
+  if (!rules || rules.length === 0) return null;
+  const [hours] = startTime.split(':').map(Number);
+  const dayOfWeek = new Date(date + 'T12:00:00').getDay();
+  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+  const active = rules.filter(r => r.is_active);
+  const matched = active
+    .filter(r => {
+      if (r.day_type === 'weekday' && isWeekend) return false;
+      if (r.day_type === 'weekend' && !isWeekend) return false;
+      if (r.hour_end > r.hour_start) return hours >= r.hour_start && hours < r.hour_end;
+      return hours >= r.hour_start || hours < r.hour_end;
+    })
+    .sort((a, b) => (b.day_type === 'all' ? 0 : 1) - (a.day_type === 'all' ? 0 : 1));
+  return matched[0] ?? null;
+}
+
+function getDefaultRate(startTime: string, base: number): number {
+  const [h] = startTime.split(':').map(Number);
+  const isDay = h >= PRICING.DAY_HOURS_START && h < PRICING.DAY_HOURS_END;
+  return isDay ? base : Math.round(base * PRICING.NIGHT_RATE_MULTIPLIER);
+}
+
+export function calculateBookingPrice(
+  startTime: string,
+  durationMinutes: number,
+  basePricePerHour: number = PRICING.DEFAULT_DAY_RATE,
+  rules?: PricingRule[],
+  date?: string
+): number {
+  let rate: number;
+  if (rules && rules.length > 0 && date) {
+    const rule = findMatchingRule(startTime, date, rules);
+    rate = rule ? rule.price_per_hour : getDefaultRate(startTime, basePricePerHour);
+  } else {
+    rate = getDefaultRate(startTime, basePricePerHour);
+  }
+  return Math.round(rate * (durationMinutes / 60));
+}
+
 export function formatPrice(price: number): string {
   return `${price.toLocaleString('fr-FR')} FCFA`;
 }
 
-/**
- * Get hourly rate based on time and field's base price
- */
 export function getHourlyRate(
-  time: string, 
-  basePricePerHour: number = PRICING.DEFAULT_DAY_RATE
+  time: string,
+  basePricePerHour: number = PRICING.DEFAULT_DAY_RATE,
+  rules?: PricingRule[],
+  date?: string
 ): number {
-  const [hours] = time.split(':').map(Number);
-  const hour = hours;
-  const isDayRate = hour >= PRICING.DAY_HOURS_START && hour < PRICING.DAY_HOURS_END;
-  return isDayRate 
-    ? basePricePerHour 
-    : Math.round(basePricePerHour * PRICING.NIGHT_RATE_MULTIPLIER);
+  if (rules && rules.length > 0 && date) {
+    const rule = findMatchingRule(time, date, rules);
+    if (rule) return rule.price_per_hour;
+  }
+  return getDefaultRate(time, basePricePerHour);
 }
 
-/**
- * Check if a time slot is day rate or night rate
- */
 export function isDayRate(time: string): boolean {
-  const [hours] = time.split(':').map(Number);
-  return hours >= PRICING.DAY_HOURS_START && hours < PRICING.DAY_HOURS_END;
+  const [h] = time.split(':').map(Number);
+  return h >= PRICING.DAY_HOURS_START && h < PRICING.DAY_HOURS_END;
 }
-

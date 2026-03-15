@@ -56,7 +56,7 @@ export default function ProfilePage() {
         setBookingStats({
           total: bookings.length,
           confirmed: bookings.filter((b: any) => b.status === 'confirmed').length,
-          pending: bookings.filter((b: any) => b.status === 'pending').length,
+          pending: bookings.filter((b: any) => b.status === 'pending' || b.status === 'pending_payment').length,
           cancelled: bookings.filter((b: any) => b.status === 'cancelled').length,
         });
       }
