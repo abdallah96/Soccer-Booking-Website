@@ -65,7 +65,7 @@ export const Header = () => {
           </Link>
 
           <nav className="hidden lg:flex items-center space-x-6">
-            {user?.role === 'admin' ? (
+            {(user?.role === 'admin' || user?.role === 'super_admin') ? (
               <>
                 <Link 
                   href="/admin" 
@@ -197,7 +197,7 @@ export const Header = () => {
       {showMenu && (
         <div className="lg:hidden border-t-2 border-gray-200 bg-white/95 backdrop-blur-xl">
           <nav className="px-6 py-6 space-y-3">
-            {user?.role === 'admin' ? (
+            {(user?.role === 'admin' || user?.role === 'super_admin') ? (
               <>
                 <Link 
                   href="/admin" 

@@ -543,7 +543,7 @@ function PaymentInstructionsEditor() {
 
 // ───────────────────────────────────────────────────────────────────────────
 
-type ActiveSection = 'dashboard' | 'bookings' | 'availability' | 'fields' | 'pricing' | 'subscriptions' | 'users' | 'reviews' | 'settings';
+type ActiveSection = 'dashboard' | 'bookings' | 'availability' | 'fields' | 'pricing' | 'subscriptions' | 'users' | 'reviews' | 'settings' | 'admins';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -1543,6 +1543,7 @@ export default function AdminPage() {
               { id: 'subscriptions', label: '🔄', fullLabel: 'Abonnements' },
               { id: 'users', label: '👥', fullLabel: 'Utilisateurs' },
               { id: 'reviews', label: '💬', fullLabel: 'Commentaires' },
+              ...(user?.role === 'super_admin' ? [{ id: 'admins', label: '👑', fullLabel: 'Admins' }] : []),
               { id: 'settings', label: '⚙️', fullLabel: 'Paramètres' },
             ].map((item) => (
               <button
@@ -2446,11 +2447,13 @@ export default function AdminPage() {
                           </td>
                           <td className="py-4">
                             <span className={`px-2 py-1 text-xs font-black rounded ${
-                              u.role === 'admin' 
-                                ? 'bg-red-500/20 text-red-300' 
+                              u.role === 'super_admin'
+                                ? 'bg-amber-500/20 text-amber-300'
+                                : u.role === 'admin'
+                                ? 'bg-red-500/20 text-red-300'
                                 : 'bg-white/10 text-white/60'
                             }`}>
-                              {u.role === 'admin' ? 'ADMIN' : 'CLIENT'}
+                              {u.role === 'super_admin' ? 'SUPER ADMIN' : u.role === 'admin' ? 'ADMIN' : 'CLIENT'}
                             </span>
                           </td>
                           <td className="py-4 text-center">
@@ -2492,11 +2495,13 @@ export default function AdminPage() {
                           <div>
                             <div className="text-white font-black">{u.name}</div>
                             <span className={`px-2 py-0.5 text-xs font-black rounded ${
-                              u.role === 'admin' 
-                                ? 'bg-red-500/20 text-red-300' 
+                              u.role === 'super_admin'
+                                ? 'bg-amber-500/20 text-amber-300'
+                                : u.role === 'admin'
+                                ? 'bg-red-500/20 text-red-300'
                                 : 'bg-white/10 text-white/60'
                             }`}>
-                              {u.role === 'admin' ? 'ADMIN' : 'CLIENT'}
+                              {u.role === 'super_admin' ? 'SUPER ADMIN' : u.role === 'admin' ? 'ADMIN' : 'CLIENT'}
                             </span>
                           </div>
                         </div>
@@ -2679,6 +2684,96 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* ADMINS (Super Admin only) */}
+        {activeSection === 'admins' && user?.role === 'super_admin' && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-black text-white mb-4">👑 Gestion des Admins</h2>
+            <p className="text-white/60 text-sm mb-4">Créez ou supprimez des administrateurs. Seul le Super Admin peut gérer cette section.</p>
+
+            {adminsLoading ? (
+              <div className="text-center py-12 text-white/40">Chargement...</div>
+            ) : admins.length === 0 ? (
+              <div className="text-center py-8 text-white/40">Aucun admin pour le moment.</div>
+            ) : (
+              <div className="space-y-2 mb-6">
+                {admins.map((admin) => (
+                  <div
+                    key={admin.id}
+                    className="flex items-center justify-between bg-white/5 border border-white/10 rounded-lg p-4"
+                  >
+                    <div>
+                      <div className="text-white font-medium">{admin.name}</div>
+                      <div className="text-white/50 text-sm">{admin.email}</div>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteAdmin(admin.id, admin.name)}
+                      disabled={deletingAdmin === admin.id}
+                      className="px-4 py-2 bg-red-500/20 text-red-400 text-sm font-black rounded-lg border border-red-500/30 hover:bg-red-500/30 transition-colors disabled:opacity-50"
+                    >
+                      {deletingAdmin === admin.id ? '...' : 'Supprimer'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <button
+              onClick={() => setShowCreateAdminForm(!showCreateAdminForm)}
+              className="w-full bg-red-500/20 border border-red-500/30 rounded-xl p-4 text-left hover:bg-red-500/30 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">➕</span>
+                <div>
+                  <div className="text-white font-black">Créer un admin</div>
+                  <div className="text-white/50 text-sm">Ajouter un nouvel administrateur (email, nom, mot de passe)</div>
+                </div>
+              </div>
+            </button>
+
+            {showCreateAdminForm && (
+              <form onSubmit={handleCreateAdmin} className="bg-white/5 border border-white/10 rounded-xl p-5 space-y-4">
+                <input
+                  type="text"
+                  value={adminData.name}
+                  onChange={(e) => setAdminData({ ...adminData, name: e.target.value })}
+                  placeholder="Nom complet *"
+                  className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
+                  required
+                />
+                <input
+                  type="email"
+                  value={adminData.email}
+                  onChange={(e) => setAdminData({ ...adminData, email: e.target.value })}
+                  placeholder="Email *"
+                  className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
+                  required
+                />
+                <input
+                  type="password"
+                  value={adminData.password}
+                  onChange={(e) => setAdminData({ ...adminData, password: e.target.value })}
+                  placeholder="Mot de passe (min. 6 caractères) *"
+                  className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
+                  required
+                  minLength={6}
+                />
+                <div className="flex gap-2">
+                  <button type="submit" className="flex-1 py-3 bg-red-600 text-white font-black rounded-lg">
+                    Créer l&apos;admin
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateAdminForm(false)}
+                    className="px-6 py-3 bg-white/10 text-white rounded-lg"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        )}
+
         {/* SETTINGS */}
         {activeSection === 'settings' && (
           <div className="space-y-4">
@@ -2830,97 +2925,6 @@ export default function AdminPage() {
                 </form>
               )}
             </div>
-
-            {user?.role === 'super_admin' && (
-              <>
-                <div className="border-t border-white/10 pt-4 mt-4">
-                  <h3 className="text-lg font-black text-white mb-4">👑 Gestion des Admins</h3>
-                  
-                  {/* Admins List */}
-                  {adminsLoading ? (
-                    <div className="text-center py-8 text-white/40">Chargement...</div>
-                  ) : admins.length === 0 ? (
-                    <div className="text-center py-8 text-white/40">Aucun admin</div>
-                  ) : (
-                    <div className="space-y-2 mb-4">
-                      {admins.map((admin) => (
-                        <div
-                          key={admin.id}
-                          className="flex items-center justify-between bg-white/5 border border-white/10 rounded-lg p-3"
-                        >
-                          <div>
-                            <div className="text-white font-medium">{admin.name}</div>
-                            <div className="text-white/50 text-xs">{admin.email}</div>
-                          </div>
-                          <button
-                            onClick={() => handleDeleteAdmin(admin.id, admin.name)}
-                            disabled={deletingAdmin === admin.id}
-                            className="px-3 py-1 bg-red-500/20 text-red-400 text-xs font-black rounded border border-red-500/30 hover:bg-red-500/30 transition-colors disabled:opacity-50"
-                          >
-                            {deletingAdmin === admin.id ? '...' : 'Supprimer'}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Create Admin Button */}
-                  <button
-                    onClick={() => setShowCreateAdminForm(!showCreateAdminForm)}
-                    className="w-full bg-red-500/20 border border-red-500/30 rounded-xl p-4 text-left hover:bg-red-500/30 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">➕</span>
-                      <div>
-                        <div className="text-white font-black">Créer un admin</div>
-                        <div className="text-white/50 text-sm">Ajouter un nouvel administrateur</div>
-                      </div>
-                    </div>
-                  </button>
-                </div>
-              </>
-            )}
-
-        {showCreateAdminForm && (
-              <form onSubmit={handleCreateAdmin} className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
-              <input
-                type="text"
-                value={adminData.name}
-                onChange={(e) => setAdminData({ ...adminData, name: e.target.value })}
-                placeholder="Nom complet"
-                  className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
-              />
-              <input
-                type="email"
-                value={adminData.email}
-                onChange={(e) => setAdminData({ ...adminData, email: e.target.value })}
-                placeholder="Email"
-                  className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
-              />
-              <input
-                type="password"
-                value={adminData.password}
-                onChange={(e) => setAdminData({ ...adminData, password: e.target.value })}
-                placeholder="Mot de passe"
-                  className="w-full px-4 py-3 bg-gray-800 border border-white/20 rounded-lg text-white"
-              />
-                <div className="flex gap-2">
-                <button
-                  type="submit"
-                    className="flex-1 py-3 bg-red-600 text-white font-black rounded-lg"
-                >
-                    Créer
-                </button>
-                <button
-                  type="button"
-                    onClick={() => setShowCreateAdminForm(false)}
-                    className="px-6 py-3 bg-white/10 text-white rounded-lg"
-                >
-                  Annuler
-                </button>
-              </div>
-            </form>
-            )}
           </div>
         )}
       </div>

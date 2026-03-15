@@ -59,6 +59,11 @@ src/
 
 Le site est entièrement en français, adapté pour le marché sénégalais.
 
+## Scripts
+
+- **Créer un Super Admin** : `npm run create-super-admin <email> <name> <password> [phone]` — crée le compte propriétaire (voir `.env.local` pour les clés Supabase).
+- **Nettoyer les données** : `npm run clean-all-data` — supprime réservations, abonnements, utilisateurs (garde les super_admins). Option `-- --all-users` pour tout supprimer.
+
 ## 📄 Licence
 
 Ce projet est privé.
