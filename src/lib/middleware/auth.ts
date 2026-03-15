@@ -69,3 +69,18 @@ export async function requireAdmin<T>(
   (request as AuthenticatedRequest).user = user;
   return handler(request as AuthenticatedRequest);
 }
+
+export async function requireSuperAdmin<T>(
+  request: NextRequest,
+  handler: (req: AuthenticatedRequest) => Promise<NextResponse<T>>
+): Promise<NextResponse<T>> {
+  const user = await getAuthUser(request);
+  if (!user) {
+    return NextResponse.json({ error: 'Non autorisé' }, { status: 401 }) as NextResponse<T>;
+  }
+  if (user.role !== 'super_admin') {
+    return NextResponse.json({ error: 'Accès réservé au super administrateur' }, { status: 403 }) as NextResponse<T>;
+  }
+  (request as AuthenticatedRequest).user = user;
+  return handler(request as AuthenticatedRequest);
+}
