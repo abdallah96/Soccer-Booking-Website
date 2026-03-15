@@ -14,6 +14,7 @@ interface AuthState {
   setUser: (user: User | null) => void;
   setError: (error: string | null) => void;
   logout: () => void;
+  fetchUser: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -23,7 +24,20 @@ export const useAuthStore = create<AuthState>()(
       setUser: (user) => set({ user }),
       setError: () => set({}),
       logout: () => set({ user: null }),
+      fetchUser: async () => {
+        try {
+          const res = await fetch('/api/auth/me', { credentials: 'include' });
+          if (!res.ok) {
+            set({ user: null });
+            return;
+          }
+          const { user } = await res.json();
+          set({ user: user ?? null });
+        } catch {
+          set({ user: null });
+        }
+      },
     }),
-    { name: 'auth-storage' }
+    { name: 'auth-storage', partialize: (s) => ({ user: s.user }) }
   )
 );

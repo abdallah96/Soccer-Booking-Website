@@ -16,4 +16,6 @@ export const CONTACT = {
 export const FIELD_CONFIG = {
   PETIT_CAMP_NAME: 'Petit Camp',
   PETIT_CAMP_CAPACITY: 18,
+  DEFAULT_CAPACITY: 18,
+  DEFAULT_RATING: 0,
 } as const;

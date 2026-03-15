@@ -14,9 +14,9 @@ export function trackAuth(_event: string, _props?: Record<string, unknown>) {
   }
 }
 
-export function trackAction(_event: string, _label?: string) {
+export function trackAction(_event: string, _label?: string, _data?: Record<string, unknown>) {
   if (typeof window !== 'undefined') {
-    // console.debug('trackAction', _event, _label);
+    // console.debug('trackAction', _event, _label, _data);
   }
 }
 
