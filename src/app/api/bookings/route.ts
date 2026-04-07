@@ -11,7 +11,7 @@ import bcrypt from 'bcryptjs';
 async function handlePost(request: NextRequest) {
   try {
     const body = await request.json();
-    const { field_id, date, start_time, duration = 60, payment_method = 'wave', phone, name, email } = body;
+    const { field_id, date, start_time, duration = 60, payment_method = 'wave', phone, name, email, discount_code } = body;
 
     const { user: authUser } = await verifyAuth(request);
     let user_id: string;
@@ -130,7 +130,39 @@ async function handlePost(request: NextRequest) {
       console.log('Field not found in DB, proceeding with provided field_id');
     }
 
-    const amount = calculateBookingPrice(sanitizedTime, sanitizedDuration, basePricePerHour);
+    let amount = calculateBookingPrice(sanitizedTime, sanitizedDuration, basePricePerHour);
+    let appliedDiscountId: string | null = null;
+
+    if (discount_code) {
+      const code = String(discount_code).toUpperCase().trim();
+      const { data: discountData, error: discountErr } = await db
+        .from('discount_codes')
+        .select('*')
+        .eq('code', code)
+        .single();
+
+      if (discountErr || !discountData) {
+        return NextResponse.json({ error: 'Code de réduction invalide' }, { status: 400 });
+      }
+      if (discountData.is_used) {
+        return NextResponse.json({ error: 'Ce code a déjà été utilisé' }, { status: 400 });
+      }
+      if (discountData.expires_at && new Date(discountData.expires_at) < new Date()) {
+        return NextResponse.json({ error: 'Ce code a expiré' }, { status: 400 });
+      }
+      if (discountData.user_id !== user_id) {
+        return NextResponse.json({ error: 'Ce code ne vous appartient pas' }, { status: 400 });
+      }
+
+      if (discountData.discount_type === 'free_session') {
+        amount = 0;
+      } else if (discountData.discount_type === 'percentage') {
+        amount = Math.round(amount * (1 - Number(discountData.discount_value) / 100));
+      } else if (discountData.discount_type === 'fixed') {
+        amount = Math.max(0, amount - Number(discountData.discount_value));
+      }
+      appliedDiscountId = discountData.id;
+    }
 
     const [hours, minutes] = sanitizedTime.split(':').map(Number);
     const startDate = new Date(`2000-01-01T${sanitizedTime}:00`);
@@ -180,6 +212,17 @@ async function handlePost(request: NextRequest) {
         { error: 'Erreur lors de la création de la réservation' },
         { status: 500 }
       );
+    }
+
+    if (appliedDiscountId) {
+      await db
+        .from('discount_codes')
+        .update({
+          is_used: true,
+          used_at: new Date().toISOString(),
+          booking_id: booking.id,
+        })
+        .eq('id', appliedDiscountId);
     }
 
     const { error: timeSlotError } = await db

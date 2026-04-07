@@ -52,6 +52,9 @@ export default function FieldDetailPage() {
   const [bookingSlotTime, setBookingSlotTime] = useState('');
   const [guestBookingData, setGuestBookingData] = useState({ phone: '', name: '', email: '' });
   const [isBooking, setIsBooking] = useState(false);
+  const [discountCode, setDiscountCode] = useState('');
+  const [discountValidation, setDiscountValidation] = useState<{ valid: boolean; discount?: any; error?: string } | null>(null);
+  const [validatingCode, setValidatingCode] = useState(false);
   
   // Reviews state
   const [reviews, setReviews] = useState<any[]>([]);
@@ -182,6 +185,25 @@ export default function FieldDetailPage() {
     setShowBookingModal(true);
   };
 
+  const validateDiscountCode = async () => {
+    if (!discountCode.trim()) return;
+    setValidatingCode(true);
+    try {
+      const res = await fetch('/api/discount-codes/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: discountCode }),
+      });
+      const data = await res.json();
+      setDiscountValidation(data);
+      if (!data.valid) toast.error(data.error || 'Code invalide');
+    } catch {
+      setDiscountValidation({ valid: false, error: 'Erreur de validation' });
+    } finally {
+      setValidatingCode(false);
+    }
+  };
+
   const handleBooking = async () => {
     const date = bookingSlotDate || selectedDate;
     const time = bookingSlotTime || selectedStartTime;
@@ -191,7 +213,6 @@ export default function FieldDetailPage() {
       return;
     }
 
-    // For guest booking, phone is required
     if (!user && !guestBookingData.phone) {
       toast.error('Numéro de téléphone requis');
       return;
@@ -207,7 +228,10 @@ export default function FieldDetailPage() {
         payment_method: selectedPaymentMethod,
       };
 
-      // Add guest info if not logged in
+      if (discountValidation?.valid && discountCode.trim()) {
+        bookingPayload.discount_code = discountCode.trim();
+      }
+
       if (!user) {
         bookingPayload.phone = guestBookingData.phone;
         if (guestBookingData.name) bookingPayload.name = guestBookingData.name;
@@ -247,6 +271,8 @@ export default function FieldDetailPage() {
       toast.success('Réservation créée ! Finalisez votre paiement.');
       setShowBookingModal(false);
       setGuestBookingData({ phone: '', name: '', email: '' });
+      setDiscountCode('');
+      setDiscountValidation(null);
 
       // Always redirect to confirmation page with payment instructions
       router.push(`/booking-confirmation?id=${result.booking?.id}`);
@@ -917,14 +943,57 @@ export default function FieldDetailPage() {
                     </div>
                   </div>
 
+                  {user && (
+                    <div>
+                      <label className="block text-sm font-black text-white/80 mb-2">Code de réduction (optionnel)</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={discountCode}
+                          onChange={(e) => {
+                            setDiscountCode(e.target.value.toUpperCase());
+                            setDiscountValidation(null);
+                          }}
+                          placeholder="PC-XXXXXX"
+                          className="flex-1 px-4 py-2 bg-gray-800/50 border border-white/20 rounded-lg text-white text-sm focus:border-purple-500 focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={validateDiscountCode}
+                          disabled={!discountCode.trim() || validatingCode}
+                          className="px-4 py-2 bg-purple-600 text-white text-sm font-bold rounded-lg disabled:opacity-50 hover:bg-purple-700 transition-colors"
+                        >
+                          {validatingCode ? '...' : 'Vérifier'}
+                        </button>
+                      </div>
+                      {discountValidation?.valid && (
+                        <div className="mt-2 px-3 py-2 bg-green-500/10 border border-green-500/30 rounded-lg text-green-300 text-xs font-bold">
+                          {discountValidation.discount?.discount_type === 'free_session'
+                            ? 'Séance gratuite appliquée !'
+                            : `Réduction de ${discountValidation.discount?.discount_value}% appliquée !`}
+                        </div>
+                      )}
+                      {discountValidation && !discountValidation.valid && (
+                        <div className="mt-2 text-red-400 text-xs">{discountValidation.error}</div>
+                      )}
+                    </div>
+                  )}
+
                   <div className="pt-4 border-t border-white/10">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-white/80 font-medium">Total</span>
-                      <span className="text-2xl font-black text-red-500">
-                        {calculatedPrice > 0 ? formatPrice(calculatedPrice) : '---'}
-                      </span>
+                      {discountValidation?.valid && discountValidation.discount?.discount_type === 'free_session' ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-white/40 line-through text-sm">{formatPrice(calculatedPrice)}</span>
+                          <span className="text-2xl font-black text-green-400">GRATUIT</span>
+                        </div>
+                      ) : (
+                        <span className="text-2xl font-black text-red-500">
+                          {calculatedPrice > 0 ? formatPrice(calculatedPrice) : '---'}
+                        </span>
+                      )}
                     </div>
-                    {calculatedPrice > 0 && (
+                    {calculatedPrice > 0 && !(discountValidation?.valid) && (
                       <div className="flex items-center justify-between mb-4 bg-orange-500/10 border border-orange-500/20 rounded-lg px-3 py-2">
                         <span className="text-orange-300 text-sm font-black">Acompte à payer (50%)</span>
                         <span className="text-orange-300 text-sm font-black">{formatPrice(Math.round(calculatedPrice * 0.5))}</span>

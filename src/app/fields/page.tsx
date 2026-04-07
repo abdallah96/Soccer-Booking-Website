@@ -45,8 +45,7 @@ export default function FieldsPage() {
     );
   }
 
-  // Since we only have one field, redirect directly to the booking page
-  const field = fields[0];
+  const singleField = fields.length === 1;
 
   return (
     <div className="min-h-screen bg-gray-900 py-16 md:py-20 px-6 sm:px-8 lg:px-12 relative overflow-hidden">
@@ -55,102 +54,109 @@ export default function FieldsPage() {
         <div className="absolute top-0 right-0 w-1/2 h-full bg-[radial-gradient(circle_at_100%_50%,rgba(107,114,128,0.1),transparent_70%)]"></div>
       </div>
       
-      <div className="relative z-10 max-w-4xl mx-auto text-white">
+      <div className="relative z-10 max-w-6xl mx-auto text-white">
         <div className="mb-12 md:mb-16 text-center">
           <div className="inline-block mb-6">
             <span className="text-white/40 text-sm font-mono tracking-[0.3em] uppercase">RÉSERVER</span>
           </div>
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black leading-tight mb-6">
-            PETIT <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-700">CAMP</span>
+            {singleField ? 'PETIT ' : 'NOS '}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-700">
+              {singleField ? 'CAMP' : 'TERRAINS'}
+            </span>
           </h1>
           <p className="text-xl text-white/60 max-w-2xl mx-auto font-light">
-            Réservez votre créneau en quelques clics. Disponible pour les 2 prochaines semaines.
+            {singleField
+              ? 'Réservez votre créneau en quelques clics. Disponible pour les 2 prochaines semaines.'
+              : `${fields.length} terrains disponibles — choisissez et réservez en quelques clics.`}
           </p>
         </div>
 
-        {/* Single Field Card */}
-        <div className="max-w-2xl mx-auto">
-          <Link 
-            href={`/fields/${field.id}`}
-            className="group block"
-          >
-            <div className="relative">
-              <div className="absolute -bottom-3 -right-3 w-full h-full border-2 border-red-500/30 group-hover:border-red-500/50 transition-colors"></div>
-              <div className="relative bg-white/5 backdrop-blur-md border border-white/10 overflow-hidden group-hover:bg-white/10 transition-colors">
-                {/* Image */}
-                {field.images && field.images[0] ? (
-                  <img
-                    src={field.images[0]}
-                    alt={field.name}
-                    className="w-full h-64 object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <div className="w-full h-64 bg-gradient-to-br from-red-500/20 to-gray-500/20 flex items-center justify-center">
-                    <span className="text-8xl">⚽</span>
-                  </div>
-                )}
-
-                {/* Content */}
-                <div className="p-8">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-xs text-white/40 font-mono uppercase">{field.location}</span>
-                    <span className="text-sm font-black text-yellow-400">{field.rating}★</span>
-                  </div>
-                  
-                  <h2 className="text-4xl font-black text-white mb-3">{field.name.toUpperCase()}</h2>
-                  
-                  <p className="text-white/60 mb-6 font-light">
-                    {field.description || 'Terrain professionnel avec installations modernes'}
-                  </p>
-
-                  {field.facilities && field.facilities.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-6">
-                      {field.facilities.map((facility, index) => (
-                        <span
-                          key={index}
-                          className="px-3 py-1 bg-red-500/20 text-red-300 border border-red-500/30 text-xs font-mono uppercase"
-                        >
-                          {facility}
-                        </span>
-                      ))}
+        <div className={`${singleField ? 'max-w-2xl mx-auto' : 'grid md:grid-cols-2 xl:grid-cols-3 gap-8'}`}>
+          {fields.map((field) => (
+            <Link 
+              key={field.id}
+              href={`/fields/${field.id}`}
+              className="group block"
+            >
+              <div className="relative h-full">
+                <div className="absolute -bottom-3 -right-3 w-full h-full border-2 border-red-500/30 group-hover:border-red-500/50 transition-colors"></div>
+                <div className="relative bg-white/5 backdrop-blur-md border border-white/10 overflow-hidden group-hover:bg-white/10 transition-colors h-full flex flex-col">
+                  {field.images && field.images[0] ? (
+                    <img
+                      src={field.images[0]}
+                      alt={field.name}
+                      className="w-full h-48 object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-48 bg-gradient-to-br from-red-500/20 to-gray-500/20 flex items-center justify-center">
+                      <span className="text-6xl">⚽</span>
                     </div>
                   )}
 
-                  <div className="grid grid-cols-3 gap-4 pt-6 border-t border-white/10">
-                    <div className="text-center">
-                      <div className="text-2xl font-black text-white mb-1">{field.capacity}</div>
-                      <div className="text-xs text-white/40 font-mono uppercase">Joueurs</div>
+                  <div className="p-6 flex-1 flex flex-col">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs text-white/40 font-mono uppercase">{field.location}</span>
+                      <span className="text-sm font-black text-yellow-400">{field.rating}★</span>
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-black text-red-500 mb-1">
-                        {(field.price_per_hour || PRICING.DEFAULT_DAY_RATE).toLocaleString()}
-                      </div>
-                      <div className="text-xs text-white/40 font-mono uppercase">FCFA/h (jour)</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-black text-gray-400 mb-1">
-                        {Math.round((field.price_per_hour || PRICING.DEFAULT_DAY_RATE) * PRICING.NIGHT_RATE_MULTIPLIER).toLocaleString()}
-                      </div>
-                      <div className="text-xs text-white/40 font-mono uppercase">FCFA/h (nuit)</div>
-                    </div>
-                  </div>
+                    
+                    <h2 className="text-2xl font-black text-white mb-2">{field.name.toUpperCase()}</h2>
+                    
+                    <p className="text-white/60 mb-4 font-light text-sm line-clamp-2">
+                      {field.description || 'Terrain professionnel avec installations modernes'}
+                    </p>
 
-                  <div className="mt-8">
-                    <div className="w-full px-8 py-4 bg-red-600 text-white font-black text-center text-lg group-hover:bg-red-700 transition-colors">
-                      RÉSERVER MAINTENANT →
+                    {field.facilities && field.facilities.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-4">
+                        {field.facilities.slice(0, 4).map((facility: string, index: number) => (
+                          <span
+                            key={index}
+                            className="px-2 py-0.5 bg-red-500/20 text-red-300 border border-red-500/30 text-xs font-mono uppercase"
+                          >
+                            {facility}
+                          </span>
+                        ))}
+                        {field.facilities.length > 4 && (
+                          <span className="px-2 py-0.5 text-white/40 text-xs">+{field.facilities.length - 4}</span>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="mt-auto">
+                      <div className="grid grid-cols-3 gap-3 pt-4 border-t border-white/10 mb-4">
+                        <div className="text-center">
+                          <div className="text-lg font-black text-white">{field.capacity}</div>
+                          <div className="text-xs text-white/40 font-mono uppercase">Joueurs</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-lg font-black text-red-500">
+                            {(field.price_per_hour || PRICING.DEFAULT_DAY_RATE).toLocaleString()}
+                          </div>
+                          <div className="text-xs text-white/40 font-mono uppercase">FCFA/h</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-lg font-black text-gray-400">
+                            {Math.round((field.price_per_hour || PRICING.DEFAULT_DAY_RATE) * PRICING.NIGHT_RATE_MULTIPLIER).toLocaleString()}
+                          </div>
+                          <div className="text-xs text-white/40 font-mono uppercase">Nuit</div>
+                        </div>
+                      </div>
+
+                      <div className="w-full px-6 py-3 bg-red-600 text-white font-black text-center group-hover:bg-red-700 transition-colors">
+                        RÉSERVER →
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </Link>
+            </Link>
+          ))}
         </div>
 
-        {/* Info Box */}
         <div className="max-w-2xl mx-auto mt-12 space-y-4">
           <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-xl">
             <h3 className="text-lg font-black text-white mb-4">📅 Réservation</h3>
@@ -175,7 +181,7 @@ export default function FieldsPage() {
           </div>
           <Link href="/fields/info">
             <div className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-xl hover:bg-white/10 transition-colors cursor-pointer">
-              <h3 className="text-lg font-black text-white mb-2">ℹ️ Plus d'informations</h3>
+              <h3 className="text-lg font-black text-white mb-2">ℹ️ Plus d&apos;informations</h3>
               <p className="text-white/60 text-sm font-light">
                 Découvrez les statistiques détaillées, les équipements et toutes les informations sur le terrain.
               </p>

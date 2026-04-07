@@ -237,6 +237,18 @@ function BookingConfirmationContent() {
             <span className="text-white/50 text-xs font-mono">ID</span>
             <span className="text-white/40 text-xs font-mono">{booking.id.slice(0, 8).toUpperCase()}</span>
           </div>
+          {isConfirmed && (
+            <div className="border-t border-white/10 pt-3">
+              <a
+                href={`/api/bookings/${booking.id}/receipt`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full py-3 bg-white/10 border border-white/20 rounded-xl text-sm font-bold text-white hover:bg-white/20 transition-colors"
+              >
+                📄 Télécharger le reçu PDF
+              </a>
+            </div>
+          )}
         </div>
 
         {/* Timer + payment instructions — only for pending_payment, non-cash */}

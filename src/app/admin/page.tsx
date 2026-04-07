@@ -6,6 +6,7 @@ import { useAuthStore } from '@/lib/stores/authStore';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Field } from '@/lib/hooks/useField';
 import toast from 'react-hot-toast';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 // ── Pricing Rules Section ───────────────────────────────────────────────────
 
@@ -543,7 +544,7 @@ function PaymentInstructionsEditor() {
 
 // ───────────────────────────────────────────────────────────────────────────
 
-type ActiveSection = 'dashboard' | 'bookings' | 'availability' | 'fields' | 'pricing' | 'subscriptions' | 'users' | 'reviews' | 'settings' | 'admins';
+type ActiveSection = 'dashboard' | 'bookings' | 'availability' | 'fields' | 'pricing' | 'subscriptions' | 'users' | 'reviews' | 'settings' | 'admins' | 'loyalty';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -583,6 +584,8 @@ export default function AdminPage() {
   const [adminsLoading, setAdminsLoading] = useState(false);
   const [deletingAdmin, setDeletingAdmin] = useState<string | null>(null);
   const [reviews, setReviews] = useState<any[]>([]);
+  const [loyaltyData, setLoyaltyData] = useState<any>(null);
+  const [loyaltyLoading, setLoyaltyLoading] = useState(false);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [deletingReview, setDeletingReview] = useState<string | null>(null);
   const [replyingToReview, setReplyingToReview] = useState<string | null>(null);
@@ -650,6 +653,13 @@ export default function AdminPage() {
       fetchWeekAvailability();
     }
   }, [fields]);
+
+  useEffect(() => {
+    if (activeSection === 'loyalty' && !loyaltyData && !loyaltyLoading) {
+      fetchLoyalty();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSection]);
 
   // Prevent body scroll when modals are open
   useEffect(() => {
@@ -753,6 +763,21 @@ export default function AdminPage() {
       console.error('Failed to fetch reviews:', error);
     } finally {
       setReviewsLoading(false);
+    }
+  };
+
+  const fetchLoyalty = async () => {
+    setLoyaltyLoading(true);
+    try {
+      const response = await fetch('/api/admin/loyalty', { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        setLoyaltyData(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch loyalty:', error);
+    } finally {
+      setLoyaltyLoading(false);
     }
   };
 
@@ -1543,6 +1568,7 @@ export default function AdminPage() {
               { id: 'subscriptions', label: '🔄', fullLabel: 'Abonnements' },
               { id: 'users', label: '👥', fullLabel: 'Utilisateurs' },
               { id: 'reviews', label: '💬', fullLabel: 'Commentaires' },
+              { id: 'loyalty', label: '🎁', fullLabel: 'Fidélité' },
               ...(user?.role === 'super_admin' ? [{ id: 'admins', label: '👑', fullLabel: 'Admins' }] : []),
               { id: 'settings', label: '⚙️', fullLabel: 'Paramètres' },
             ].map((item) => (
@@ -1615,7 +1641,7 @@ export default function AdminPage() {
             {stats && (
               <div className={`space-y-4 ${showStats ? '' : 'hidden lg:block'}`}>
                 {/* Revenue Cards */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                   <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-4 lg:p-6">
                     <div className="text-green-400/80 text-xs lg:text-sm font-mono uppercase tracking-wider mb-2">✅ Encaissé</div>
                     <div className="text-xl lg:text-3xl font-black text-green-400">
@@ -1643,6 +1669,13 @@ export default function AdminPage() {
                       {new Intl.NumberFormat('fr-FR').format(stats.stats?.revenue_last_30_days || 0)}
                     </div>
                     <div className="text-blue-400/60 text-xs mt-1">FCFA</div>
+                  </div>
+                  <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-2xl p-4 lg:p-6">
+                    <div className="text-cyan-400/80 text-xs lg:text-sm font-mono uppercase tracking-wider mb-2">📆 Cette semaine</div>
+                    <div className="text-xl lg:text-3xl font-black text-cyan-400">
+                      {new Intl.NumberFormat('fr-FR').format(stats.stats?.revenue_this_week || 0)}
+                    </div>
+                    <div className="text-cyan-400/60 text-xs mt-1">FCFA</div>
                   </div>
                 </div>
 
@@ -1681,33 +1714,92 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* Monthly Revenue Bar Chart */}
+                {/* Monthly Revenue Bar Chart (Recharts) */}
                 {stats.monthly_revenue && stats.monthly_revenue.length > 0 && (
                   <div className="bg-white/5 border border-white/10 rounded-2xl p-4 lg:p-6">
                     <div className="text-white font-black text-sm lg:text-base mb-4 uppercase tracking-wider">Revenus par mois (6 derniers mois)</div>
-                    <div className="flex items-end gap-2 h-28">
-                      {(() => {
-                        const maxVal = Math.max(...stats.monthly_revenue.map((m: any) => m.revenue), 1);
-                        return stats.monthly_revenue.map((m: any) => {
-                          const heightPct = Math.max((m.revenue / maxVal) * 100, m.revenue > 0 ? 4 : 0);
-                          const [year, month] = m.month.split('-');
-                          const label = new Date(Number(year), Number(month) - 1, 1)
-                            .toLocaleDateString('fr-FR', { month: 'short' });
-                          return (
-                            <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
-                              <div className="text-white/60 text-xs font-mono">
-                                {m.revenue > 0 ? `${(m.revenue / 1000).toFixed(0)}k` : ''}
-                              </div>
-                              <div
-                                className="w-full bg-red-500/70 rounded-t-md transition-all"
-                                style={{ height: `${heightPct}%`, minHeight: m.revenue > 0 ? '4px' : '0' }}
-                              />
-                              <div className="text-white/50 text-xs font-mono">{label}</div>
+                    <ResponsiveContainer width="100%" height={220}>
+                      <BarChart data={stats.monthly_revenue}>
+                        <XAxis dataKey="month" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 12 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000 ? `${(v/1000).toFixed(0)}k` : String(v)} width={45} />
+                        <Tooltip
+                          contentStyle={{ background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', fontSize: 13 }}
+                          formatter={(value: number) => [`${new Intl.NumberFormat('fr-FR').format(value)} FCFA`, 'Revenu']}
+                        />
+                        <Bar dataKey="revenue" fill="#ef4444" radius={[6, 6, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+
+                {/* Cancellation Rate + Popular Slots */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Cancellation Rate */}
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 lg:p-6">
+                    <div className="text-white font-black text-sm mb-4 uppercase tracking-wider">Taux d&apos;annulation</div>
+                    {(() => {
+                      const rate = stats.stats?.cancellation_rate || 0;
+                      const pieData = [
+                        { name: 'Confirmées', value: 100 - rate },
+                        { name: 'Annulées', value: rate },
+                      ];
+                      const COLORS = ['#22c55e', '#ef4444'];
+                      return (
+                        <div className="flex items-center gap-4">
+                          <ResponsiveContainer width={120} height={120}>
+                            <PieChart>
+                              <Pie data={pieData} dataKey="value" innerRadius={35} outerRadius={55} paddingAngle={2}>
+                                {pieData.map((_, i) => <Cell key={i} fill={COLORS[i]} />)}
+                              </Pie>
+                            </PieChart>
+                          </ResponsiveContainer>
+                          <div className="space-y-2">
+                            <div className="text-3xl font-black text-white">{rate}%</div>
+                            <div className="text-white/50 text-xs">des réservations annulées</div>
+                            <div className="flex items-center gap-2 text-xs">
+                              <span className="w-3 h-3 rounded-full bg-green-500 inline-block" /> <span className="text-white/60">Confirmées</span>
+                              <span className="w-3 h-3 rounded-full bg-red-500 inline-block ml-2" /> <span className="text-white/60">Annulées</span>
                             </div>
-                          );
-                        });
-                      })()}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Popular Time Slots */}
+                  {stats.popular_slots && stats.popular_slots.length > 0 && (
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4 lg:p-6">
+                      <div className="text-white font-black text-sm mb-4 uppercase tracking-wider">Créneaux les plus réservés</div>
+                      <ResponsiveContainer width="100%" height={200}>
+                        <BarChart data={stats.popular_slots} layout="vertical">
+                          <XAxis type="number" tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }} axisLine={false} tickLine={false} />
+                          <YAxis dataKey="slot" type="category" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12 }} axisLine={false} tickLine={false} width={50} />
+                          <Tooltip
+                            contentStyle={{ background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', fontSize: 13 }}
+                            formatter={(value: number) => [`${value} réservations`, '']}
+                          />
+                          <Bar dataKey="count" fill="#3b82f6" radius={[0, 6, 6, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
                     </div>
+                  )}
+                </div>
+
+                {/* Weekly Revenue Chart */}
+                {stats.weekly_revenue && stats.weekly_revenue.length > 0 && (
+                  <div className="bg-white/5 border border-white/10 rounded-2xl p-4 lg:p-6">
+                    <div className="text-white font-black text-sm mb-4 uppercase tracking-wider">Revenus par semaine (8 dernières semaines)</div>
+                    <ResponsiveContainer width="100%" height={180}>
+                      <BarChart data={stats.weekly_revenue}>
+                        <XAxis dataKey="week" tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 11 }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => v >= 1000 ? `${(v/1000).toFixed(0)}k` : String(v)} width={45} />
+                        <Tooltip
+                          contentStyle={{ background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, color: '#fff', fontSize: 13 }}
+                          formatter={(value: number) => [`${new Intl.NumberFormat('fr-FR').format(value)} FCFA`, 'Revenu']}
+                        />
+                        <Bar dataKey="revenue" fill="#f97316" radius={[6, 6, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
                 )}
               </div>
@@ -1977,6 +2069,18 @@ export default function AdminPage() {
                         </div>
                         <div className="text-red-300">{booking.cancellation_reason}</div>
                       </div>
+                    )}
+
+                    {/* Receipt download - for confirmed bookings */}
+                    {booking.status === 'confirmed' && (
+                      <a
+                        href={`/api/bookings/${booking.id}/receipt`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-3 py-2 mt-2 bg-white/5 border border-white/20 rounded-lg text-xs font-bold text-white/70 hover:bg-white/10 transition-colors"
+                      >
+                        <span>📄</span> Télécharger reçu PDF
+                      </a>
                     )}
 
                     {/* WhatsApp contact button - show for pending and confirmed bookings with a phone */}
@@ -2519,6 +2623,166 @@ export default function AdminPage() {
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* LOYALTY */}
+        {activeSection === 'loyalty' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl lg:text-3xl font-black text-white">Programme de fidélité</h2>
+                <p className="text-white/50 text-sm lg:text-base mt-1">
+                  Tous les {loyaltyData?.threshold || 10} matchs confirmés = 1 séance gratuite
+                </p>
+              </div>
+              <button
+                onClick={fetchLoyalty}
+                disabled={loyaltyLoading}
+                className="px-4 py-2 bg-white/10 text-white text-sm font-bold rounded-lg hover:bg-white/20 transition-colors disabled:opacity-50"
+              >
+                {loyaltyLoading ? '...' : '🔄 Actualiser'}
+              </button>
+            </div>
+
+            {loyaltyData && (
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-purple-500/10 border border-purple-500/30 rounded-2xl p-4">
+                  <div className="text-purple-400/80 text-xs font-mono uppercase mb-2">Codes générés</div>
+                  <div className="text-2xl font-black text-purple-400">{loyaltyData.total_codes_generated}</div>
+                </div>
+                <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-4">
+                  <div className="text-green-400/80 text-xs font-mono uppercase mb-2">Codes utilisés</div>
+                  <div className="text-2xl font-black text-green-400">{loyaltyData.total_codes_used}</div>
+                </div>
+                <div className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-4">
+                  <div className="text-blue-400/80 text-xs font-mono uppercase mb-2">Clients fidèles</div>
+                  <div className="text-2xl font-black text-blue-400">{loyaltyData.loyalty?.length || 0}</div>
+                </div>
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+                  <div className="text-white/50 text-xs font-mono uppercase mb-2">Seuil récompense</div>
+                  <div className="text-2xl font-black text-white">{loyaltyData.threshold} matchs</div>
+                </div>
+              </div>
+            )}
+
+            {loyaltyLoading ? (
+              <div className="text-center py-12 text-white/40">Chargement...</div>
+            ) : !loyaltyData?.loyalty?.length ? (
+              <div className="text-center py-12 text-white/40">
+                Aucun client avec des réservations confirmées
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="hidden lg:block overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="text-left text-white/60 text-sm border-b border-white/10">
+                        <th className="pb-3 font-medium">Client</th>
+                        <th className="pb-3 font-medium text-center">Matchs confirmés</th>
+                        <th className="pb-3 font-medium text-center">Prochain cadeau</th>
+                        <th className="pb-3 font-medium text-center">Codes dispo</th>
+                        <th className="pb-3 font-medium text-center">Codes utilisés</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {loyaltyData.loyalty.map((client: any) => {
+                        const progress = ((loyaltyData.threshold - client.next_reward_in) / loyaltyData.threshold) * 100;
+                        return (
+                          <tr key={client.user_id} className="border-b border-white/5 hover:bg-white/5">
+                            <td className="py-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-black">
+                                  {client.name?.charAt(0)?.toUpperCase() || '?'}
+                                </div>
+                                <div>
+                                  <div className="text-white font-medium">{client.name}</div>
+                                  <div className="text-white/50 text-xs">{client.phone || client.email}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-4 text-center">
+                              <span className="text-white font-black text-lg">{client.confirmed_bookings}</span>
+                            </td>
+                            <td className="py-4 text-center">
+                              <div className="flex flex-col items-center gap-1">
+                                <div className="w-24 h-2 bg-white/10 rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all"
+                                    style={{ width: `${progress}%` }}
+                                  />
+                                </div>
+                                <span className="text-white/50 text-xs">
+                                  {client.next_reward_in === loyaltyData.threshold
+                                    ? `dans ${loyaltyData.threshold} matchs`
+                                    : `dans ${client.next_reward_in} matchs`}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="py-4 text-center">
+                              {client.codes_available > 0 ? (
+                                <span className="px-2 py-1 bg-green-500/20 text-green-300 text-xs font-black rounded">
+                                  {client.codes_available} dispo
+                                </span>
+                              ) : (
+                                <span className="text-white/30 text-xs">—</span>
+                              )}
+                            </td>
+                            <td className="py-4 text-center">
+                              <span className="text-white/60">{client.codes_used}</span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile cards */}
+                <div className="lg:hidden space-y-3">
+                  {loyaltyData.loyalty.map((client: any) => {
+                    const progress = ((loyaltyData.threshold - client.next_reward_in) / loyaltyData.threshold) * 100;
+                    return (
+                      <div key={client.user_id} className="bg-white/5 border border-white/10 rounded-xl p-4">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-10 h-10 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-black">
+                            {client.name?.charAt(0)?.toUpperCase() || '?'}
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-white font-bold">{client.name}</div>
+                            <div className="text-white/50 text-xs">{client.phone || client.email}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-white font-black text-lg">{client.confirmed_bookings}</div>
+                            <div className="text-white/40 text-xs">matchs</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"
+                              style={{ width: `${progress}%` }}
+                            />
+                          </div>
+                          <span className="text-white/50 text-xs whitespace-nowrap">
+                            {client.next_reward_in === loyaltyData.threshold ? `${loyaltyData.threshold}` : client.next_reward_in} restant(s)
+                          </span>
+                        </div>
+                        {client.codes_available > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {client.discount_codes.filter((c: any) => !c.is_used).map((code: any) => (
+                              <span key={code.id} className="px-2 py-1 bg-green-500/20 text-green-300 text-xs font-mono rounded">
+                                {code.code}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
