@@ -106,3 +106,16 @@ secrets/
 # Local configuration overrides
 config.local.*
 *.local.*
+
+# Accidental duplicate lockfile
+package-lock 2.json
+
+# Internal / developer-only docs (not for end users)
+SETUP_GUIDE.md
+RATING_SYSTEM.md
+SECURITY_IMPROVEMENTS.md
+ANALYTICS_COMPARISON.md
+MISSING_API_ROUTES.md
+Feedback.md
+GIT_SECURITY.md
+docs/SUBSCRIPTION_FLOW.md
